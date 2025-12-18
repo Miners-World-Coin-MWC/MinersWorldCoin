@@ -1,6 +1,6 @@
 <h1 align="center">
 
-<!-- <img src="https://i.imgur.com/uktT3CY.png" alt="MinersWorldCoin" width="300"/> -->
+<img src="https://github.com/Miners-World-Coin-MWC/MinersWorldCoin/blob/main/src/qt/res/icons/bitcoin.png" alt="MinersWorldCoin" width="300"/>
 
 <br/><br/>
 
