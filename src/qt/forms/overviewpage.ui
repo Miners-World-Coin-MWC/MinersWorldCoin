@@ -73,7 +73,7 @@
                </size>
               </property>
               <property name="toolTip">
-               <string>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</string>
+               <string>The displayed information may be out of date. Your wallet automatically synchronizes with the MinersWorldCoin network after a connection is established, but this process has not completed yet.</string>
               </property>
               <property name="text">
                <string/>
@@ -419,6 +419,47 @@
          </property>
         </spacer>
        </item>
+       <item>
+        <layout class="QGridLayout" name="logo_grid">
+          <item>
+            <widget class="QLabel" name="label_wallet_bgcoin">
+             <property name="text">
+              <string/>
+             </property>
+             <property name="pixmap">
+              <pixmap resource="../bitcoin.qrc">:/icons/wallet_bgcoin</pixmap>
+             </property>
+             <property name="scaledContents">
+              <bool>false</bool>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <property name="margin">
+              <number>-2</number>
+             </property>
+            </widget>
+          </item>
+          <item>
+            <widget class="QLabel" name="label_wallet_version_overlay">
+              <property name="text">
+               <string></string>
+              </property>
+              <property name="pixmap">
+              </property>
+              <property name="scaledContents">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignLeft|Qt::AlignBottom</set>
+              </property>
+              <property name="margin">
+               <number>2</number>
+              </property>
+            </widget>
+          </item>
+        </layout>
+       </item>
       </layout>
      </item>
      <item>
@@ -459,7 +500,7 @@
                </size>
               </property>
               <property name="toolTip">
-               <string>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</string>
+               <string>The displayed information may be out of date. Your wallet automatically synchronizes with the MinersWorldCoin network after a connection is established, but this process has not completed yet.</string>
               </property>
               <property name="text">
                <string/>
@@ -536,6 +577,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../bitcoin.qrc"/>
+ </resources>
  <connections/>
 </ui>
