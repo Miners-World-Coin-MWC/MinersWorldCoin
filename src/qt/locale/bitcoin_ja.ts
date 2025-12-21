@@ -1,9 +1,46 @@
-<TS language="ja" version="2.1">
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE TS>
+<TS version="2.1" language="ja">
+<context>
+    <name>AddPeerDialog</name>
+    <message>
+        <source>Add Peer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter the peer details below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Be careful! Do not blindly trust anyone that tells you to add their node.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter the peer&apos;s address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter the peer&apos;s port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please enter an address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please enter a valid peer address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
 <context>
     <name>AddressBookPage</name>
     <message>
         <source>Right-click to edit address or label</source>
-        <translation>アドレスまたはラベルを編集するにはダブルクリック</translation>
+        <translation>右クリックでアドレスまたはラベルを編集します</translation>
     </message>
     <message>
         <source>Create a new address</source>
@@ -55,19 +92,19 @@
     </message>
     <message>
         <source>Sending addresses</source>
-        <translation>送金先アドレス</translation>
+        <translation>送金用</translation>
     </message>
     <message>
         <source>Receiving addresses</source>
-        <translation>受け取り用アドレス</translation>
+        <translation>受け取りアドレス</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
-        <translation>これらは支払いを送信するためのあなたの MinersWorldCoin アドレスです。コインを送信する前に、常に額と受信アドレスを確認してください。</translation>
+        <source>These are your Minersworldcoin addresses for sending payments. Always check the amount and the receiving address before sending coins.</source>
+        <translation>これらは支払いを送信するためのあなたの Minersworldcoin アドレスです。コインを送信する前に、常に額と受信アドレスを確認してください。</translation>
     </message>
     <message>
-        <source>These are your Bitcoin addresses for receiving payments. It is recommended to use a new receiving address for each transaction.</source>
-        <translation>これらは支払いを受け取るためのMinersWorldCoinアドレスです。トランザクションごとに新しい受け取り用アドレスを作成することが推奨されます。</translation>
+        <source>These are your Minersworldcoin addresses for receiving payments. It is recommended to use a new receiving address for each transaction.</source>
+        <translation>これらは支払いを受け取るためのドージコインアドレスです。トランザクションごとに新しい受け取り用アドレスを作成することが推奨されます。</translation>
     </message>
     <message>
         <source>&amp;Copy Address</source>
@@ -132,10 +169,6 @@
         <translation>新しいパスフレーズをもう一度</translation>
     </message>
     <message>
-        <source>Show password</source>
-        <translation>パスワードを表示</translation>
-    </message>
-    <message>
         <source>Enter the new passphrase to the wallet.&lt;br/&gt;Please use a passphrase of &lt;b&gt;ten or more random characters&lt;/b&gt;, or &lt;b&gt;eight or more words&lt;/b&gt;.</source>
         <translation>ウォレットの新しいパスフレーズを入力してください。&lt;br/&gt;&lt;b&gt;10文字以上のランダムな文字&lt;/b&gt;で構成されたものか、&lt;b&gt;8単語以上の単語&lt;/b&gt;で構成されたパスフレーズを使用してください。</translation>
     </message>
@@ -173,7 +206,7 @@
     </message>
     <message>
         <source>Warning: If you encrypt your wallet and lose your passphrase, you will &lt;b&gt;LOSE ALL OF YOUR MINERSWORLDCOINS&lt;/b&gt;!</source>
-        <translation>警告: もしもあなたのウォレットを暗号化してパスフレーズを失ってしまったなら、&lt;b&gt;あなたの MinersWorldCoin はすべて失われます&lt;/b&gt;!</translation>
+        <translation>警告: もしもあなたのウォレットを暗号化してパスフレーズを失ってしまったなら、&lt;b&gt;あなたの Minersworldcoin はすべて失われます&lt;/b&gt;!</translation>
     </message>
     <message>
         <source>Are you sure you wish to encrypt your wallet?</source>
@@ -185,7 +218,7 @@
     </message>
     <message>
         <source>%1 will close now to finish the encryption process. Remember that encrypting your wallet cannot fully protect your minersworldcoins from being stolen by malware infecting your computer.</source>
-        <translation>暗号化処理を完了させるため %1 をいますぐ終了します。ウォレットの暗号化では、コンピュータに感染したマルウェアなどによるMinersWorldCoinの盗難から完全に守ることはできないことにご注意ください。</translation>
+        <translation>暗号化処理を完了させるため %1 をいますぐ終了します。ウォレットの暗号化では、コンピュータに感染したマルウェアなどによるビットコインの盗難から完全に守ることはできないことにご注意ください。</translation>
     </message>
     <message>
         <source>IMPORTANT: Any previous backups you have made of your wallet file should be replaced with the newly generated, encrypted wallet file. For security reasons, previous backups of the unencrypted wallet file will become useless as soon as you start using the new, encrypted wallet.</source>
@@ -310,14 +343,6 @@
         <translation>パスフレーズの変更... (&amp;C)</translation>
     </message>
     <message>
-        <source>&amp;Sending addresses...</source>
-        <translation>送金先アドレス一覧 (&amp;S)...</translation>
-    </message>
-    <message>
-        <source>&amp;Receiving addresses...</source>
-        <translation>受け取り用アドレス一覧 (&amp;R)...</translation>
-    </message>
-    <message>
         <source>Open &amp;URI...</source>
         <translation>URI を開く (&amp;U)...</translation>
     </message>
@@ -342,8 +367,8 @@
         <translation>ディスク上のブロックのインデックスを再作成中...</translation>
     </message>
     <message>
-        <source>Send coins to a Bitcoin address</source>
-        <translation>MinersWorldCoin アドレスにコインを送る</translation>
+        <source>Send coins to a Minersworldcoin address</source>
+        <translation>Minersworldcoin アドレスにコインを送る</translation>
     </message>
     <message>
         <source>Backup wallet to another location</source>
@@ -366,8 +391,8 @@
         <translation>メッセージの検証... (&amp;V)</translation>
     </message>
     <message>
-        <source>Bitcoin</source>
-        <translation>MinersWorldCoin</translation>
+        <source>Minersworldcoin</source>
+        <translation>Minersworldcoin</translation>
     </message>
     <message>
         <source>Wallet</source>
@@ -394,12 +419,12 @@
         <translation>あなたのウォレットの秘密鍵を暗号化します</translation>
     </message>
     <message>
-        <source>Sign messages with your Bitcoin addresses to prove you own them</source>
-        <translation>あなたが所有していることを証明するために、あなたの MinersWorldCoin アドレスでメッセージに署名してください</translation>
+        <source>Sign messages with your Minersworldcoin addresses to prove you own them</source>
+        <translation>あなたが所有していることを証明するために、あなたの Minersworldcoin アドレスでメッセージに署名してください</translation>
     </message>
     <message>
-        <source>Verify messages to ensure they were signed with specified Bitcoin addresses</source>
-        <translation>指定された MinersWorldCoin アドレスで署名されたことを確認するためにメッセージを検証します</translation>
+        <source>Verify messages to ensure they were signed with specified Minersworldcoin addresses</source>
+        <translation>指定された Minersworldcoin アドレスで署名されたことを確認するためにメッセージを検証します</translation>
     </message>
     <message>
         <source>&amp;File</source>
@@ -418,7 +443,7 @@
         <translation>タブツールバー</translation>
     </message>
     <message>
-        <source>Request payments (generates QR codes and bitcoin: URIs)</source>
+        <source>Request payments (generates QR codes and minersworldcoin: URIs)</source>
         <translation>支払いを要求する (QRコードとminersworldcoin:ではじまるURIを生成する)</translation>
     </message>
     <message>
@@ -430,7 +455,7 @@
         <translation>支払いを受け取るアドレスとラベルのリストを表示する</translation>
     </message>
     <message>
-        <source>Open a bitcoin: URI or payment request</source>
+        <source>Open a minersworldcoin: URI or payment request</source>
         <translation>minersworldcoin: URIまたは支払いリクエストを開く</translation>
     </message>
     <message>
@@ -438,8 +463,10 @@
         <translation>コマンドラインオプション (&amp;C)</translation>
     </message>
     <message numerus="yes">
-        <source>%n active connection(s) to Bitcoin network</source>
-        <translation><numerusform>%n の MinersWorldCoin ネットワークへのアクティブな接続</numerusform></translation>
+        <source>%n active connection(s) to Minersworldcoin network</source>
+        <translation>
+            <numerusform>%n の Minersworldcoin ネットワークへのアクティブな接続</numerusform>
+        </translation>
     </message>
     <message>
         <source>Indexing blocks on disk...</source>
@@ -451,7 +478,9 @@
     </message>
     <message numerus="yes">
         <source>Processed %n block(s) of transaction history.</source>
-        <translation><numerusform>トランザクション履歴の %n ブロックを処理しました。</numerusform></translation>
+        <translation>
+            <numerusform>トランザクション履歴の %n ブロックを処理しました。</numerusform>
+        </translation>
     </message>
     <message>
         <source>%1 behind</source>
@@ -482,8 +511,8 @@
         <translation>バージョンは最新です</translation>
     </message>
     <message>
-        <source>Show the %1 help message to get a list with possible Bitcoin command-line options</source>
-        <translation>有効な MinersWorldCoin のコマンドライン オプションを見るために %1 のヘルプメッセージを表示します。</translation>
+        <source>Show the %1 help message to get a list with possible Minersworldcoin command-line options</source>
+        <translation>有効な Minersworldcoin のコマンドライン オプションを見るために %1 のヘルプメッセージを表示します。</translation>
     </message>
     <message>
         <source>%1 client</source>
@@ -552,8 +581,36 @@
         <translation>ウォレットは&lt;b&gt;暗号化されて、ロックされています&lt;/b&gt;</translation>
     </message>
     <message>
-        <source>A fatal error occurred. Bitcoin can no longer continue safely and will quit.</source>
-        <translation>致命的なエラーが発生しました。MinersWorldCoin は安全に継続することができず終了するでしょう。</translation>
+        <source>A fatal error occurred. Minersworldcoin can no longer continue safely and will quit.</source>
+        <translation>致命的なエラーが発生しました。Minersworldcoin は安全に継続することができず終了するでしょう。</translation>
+    </message>
+    <message>
+        <source>&amp;Print paper wallets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Print paper wallets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Sending addresses...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Receiving addresses...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Import Private Key...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import a Minersworldcoin private key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Runaway exception</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -692,7 +749,7 @@
     </message>
     <message>
         <source>Can vary +/- %1 satoshi(s) per input.</source>
-        <translation>ひとつの入力につき %1 satoshi 前後ずれることがあります。</translation>
+        <translation type="vanished">ひとつの入力につき %1 satoshi 前後ずれることがあります。</translation>
     </message>
     <message>
         <source>(no label)</source>
@@ -705,6 +762,10 @@
     <message>
         <source>(change)</source>
         <translation>(おつり)</translation>
+    </message>
+    <message>
+        <source>Can vary +/- %1 satoshi per input.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -746,12 +807,12 @@
         <translation>送信アドレスを編集</translation>
     </message>
     <message>
-        <source>The entered address "%1" is not a valid Bitcoin address.</source>
-        <translation>入力されたアドレス "%1" は無効な MinersWorldCoin アドレスです。</translation>
+        <source>The entered address &quot;%1&quot; is not a valid Minersworldcoin address.</source>
+        <translation>入力されたアドレス &quot;%1&quot; は無効な Minersworldcoin アドレスです。</translation>
     </message>
     <message>
-        <source>The entered address "%1" is already in the address book.</source>
-        <translation>入力されたアドレス "%1" は既にアドレス帳にあります。</translation>
+        <source>The entered address &quot;%1&quot; is already in the address book.</source>
+        <translation>入力されたアドレス &quot;%1&quot; は既にアドレス帳にあります。</translation>
     </message>
     <message>
         <source>Could not unlock wallet.</source>
@@ -774,7 +835,7 @@
     </message>
     <message>
         <source>Directory already exists. Add %1 if you intend to create a new directory here.</source>
-        <translation>ディレクトリが既に存在します。新しいディレクトリを作りたい場合は %1 と追記してください。</translation>
+        <translation>ディレクトリがもうあります。 新しいのディレクトリを作るつもりなら%1を書いてください。</translation>
     </message>
     <message>
         <source>Path already exists, and is not a directory.</source>
@@ -793,7 +854,7 @@
     </message>
     <message>
         <source>(%1-bit)</source>
-        <translation>(%1ビット)</translation>
+        <translation>(%1ドージ)</translation>
     </message>
     <message>
         <source>About %1</source>
@@ -820,8 +881,8 @@
         <translation>起動時にデータ ディレクトリを選ぶ (初期値: %u)</translation>
     </message>
     <message>
-        <source>Set language, for example "de_DE" (default: system locale)</source>
-        <translation>言語設定 例: "de_DE" (初期値: システムの言語)</translation>
+        <source>Set language, for example &quot;de_DE&quot; (default: system locale)</source>
+        <translation>言語設定 例: &quot;de_DE&quot; (初期値: システムの言語)</translation>
     </message>
     <message>
         <source>Start minimized</source>
@@ -841,6 +902,69 @@
     </message>
 </context>
 <context>
+    <name>ImportKeysDialog</name>
+    <message>
+        <source>Import Private Key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Import Private Key</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Private Key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Private key to import into your wallet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Label for this private key in your wallet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Label (optional):</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rescan</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Reset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Import</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&amp;Cancel</source>
+        <translation type="unfinished">キャンセル (&amp;C)</translation>
+    </message>
+    <message>
+        <source>Invalid private key; please check and try again!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid address generated from private key; please check and try again!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Failed to add private key.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rescanning...</source>
+        <translation type="unfinished">再スキャン中...</translation>
+    </message>
+    <message>
+        <source>Reset this form.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Intro</name>
     <message>
         <source>Welcome</source>
@@ -855,16 +979,8 @@
         <translation>これはプログラム最初の起動です。%1 がデータを保存する場所を選択して下さい。</translation>
     </message>
     <message>
-        <source>When you click OK, %1 will begin to download and process the full %4 block chain (%2GB) starting with the earliest transactions in %3 when %4 initially launched.</source>
-        <translation>OKをクリックすると、%1は完全な%4ブロックチェーン (%2GB) のダウンロードおよび処理を%4が開始された時点の%3から開始します。</translation>
-    </message>
-    <message>
-        <source>This initial synchronisation is very demanding, and may expose hardware problems with your computer that had previously gone unnoticed. Each time you run %1, it will continue downloading where it left off.</source>
-        <translation>この初期同期には多大なリソースを消費し、あなたのコンピュータにこれまで見つからなかったハードウェア上の問題を露呈させるかもしれません。%1 を実行する度に、中断された時点からダウンロードを継続します。</translation>
-    </message>
-    <message>
-        <source>If you have chosen to limit block chain storage (pruning), the historical data must still be downloaded and processed, but will be deleted afterward to keep your disk usage low.</source>
-        <translation>ブロックチェーンの保存容量に制限を設けることを選択した場合 (剪定) にも、過去のデータのダウンロードおよび処理が必要になります。しかしこれらのデータはディスク使用量を低く抑えるためにその後削除されるでしょう</translation>
+        <source>%1 will download and store a copy of the Minersworldcoin block chain. At least %2GB of data will be stored in this directory, and it will grow over time. The wallet will also be stored in this directory.</source>
+        <translation>%1 は、ビットコインのブロックチェーンのコピーを、ダウンロードして保存します。少なくとも %2 ギガバイトのデータが、このディレクトリに保存されます。そしてそれは時間と共に増加します。またウォレットもこのディレクトリに保存されます。</translation>
     </message>
     <message>
         <source>Use the default data directory</source>
@@ -875,28 +991,8 @@
         <translation>任意のデータ ディレクトリを使用:</translation>
     </message>
     <message>
-        <source>Bitcoin</source>
-        <translation>MinersWorldCoin</translation>
-    </message>
-    <message>
-        <source>At least %1 GB of data will be stored in this directory, and it will grow over time.</source>
-        <translation>少なくとも%1GBのデータをこのディレクトリに保存する必要があります。またこのデータは時間とともに増加していきます。</translation>
-    </message>
-    <message>
-        <source>Approximately %1 GB of data will be stored in this directory.</source>
-        <translation>おおむね%1GBのデータがこのディレクトリに保存されます。</translation>
-    </message>
-    <message>
-        <source>%1 will download and store a copy of the Bitcoin block chain.</source>
-        <translation>%1はMinersWorldCoinのブロックチェーンの複製をダウンロードし保存します。</translation>
-    </message>
-    <message>
-        <source>The wallet will also be stored in this directory.</source>
-        <translation>ウォレットもこのディレクトリに保存されます。</translation>
-    </message>
-    <message>
-        <source>Error: Specified data directory "%1" cannot be created.</source>
-        <translation>エラー: 指定のデータディレクトリ "%1" を作成できません。</translation>
+        <source>Error: Specified data directory &quot;%1&quot; cannot be created.</source>
+        <translation>エラー: 指定のデータディレクトリ &quot;%1&quot; を作成できません。</translation>
     </message>
     <message>
         <source>Error</source>
@@ -904,11 +1000,19 @@
     </message>
     <message numerus="yes">
         <source>%n GB of free space available</source>
-        <translation><numerusform>%n GBの空き容量が利用可能</numerusform></translation>
+        <translation>
+            <numerusform>%n GBの空き容量が利用可能</numerusform>
+        </translation>
     </message>
     <message numerus="yes">
         <source>(of %n GB needed)</source>
-        <translation><numerusform>(%n GB必要)</numerusform></translation>
+        <translation>
+            <numerusform>(%n GB必要)</numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Choose data directory</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -918,12 +1022,12 @@
         <translation>フォーム</translation>
     </message>
     <message>
-        <source>Recent transactions may not yet be visible, and therefore your wallet's balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the minersworldcoin network, as detailed below.</source>
-        <translation>確認できない最近のトランザクションがあるかもしれません。これによりウォレットの残高は不正確なものである可能性があります。この情報はウォレットが一度MinersWorldCoinネットワークへの同期が完了すると正確なものとなります。詳細は下記を参照してください。</translation>
+        <source>Recent transactions may not yet be visible, and therefore your wallet&apos;s balance might be incorrect. This information will be correct once your wallet has finished synchronizing with the minersworldcoin network, as detailed below.</source>
+        <translation>確認できない最近のトランザクションがあるかもしれません。これによりウォレットの残高は不正確なものである可能性があります。この情報はウォレットが一度ビットコインネットワークへの同期が完了すると正確なものとなります。詳細は下記を参照してください。</translation>
     </message>
     <message>
         <source>Attempting to spend minersworldcoins that are affected by not-yet-displayed transactions will not be accepted by the network.</source>
-        <translation>まだ表示されていないトランザクションが影響するMinersWorldCoinを使用しようとすると、ネットワークから認証がなされないでしょう。</translation>
+        <translation>まだ表示されていないトランザクションが影響するビットコインを使用しようとすると、ネットワークから認証がなされないでしょう。</translation>
     </message>
     <message>
         <source>Number of blocks left</source>
@@ -943,7 +1047,7 @@
     </message>
     <message>
         <source>Progress increase per hour</source>
-        <translation>一時間あたりの進捗増加</translation>
+        <translation>進捗状況は一時間ごとに増加します</translation>
     </message>
     <message>
         <source>calculating...</source>
@@ -1016,24 +1120,16 @@
         <translation>スクリプト検証用スレッド数 (&amp;V)</translation>
     </message>
     <message>
+        <source>Accept connections from outside</source>
+        <translation>外部からの接続を許可する</translation>
+    </message>
+    <message>
+        <source>Allow incoming connections</source>
+        <translation>外部からの接続を許可する</translation>
+    </message>
+    <message>
         <source>IP address of the proxy (e.g. IPv4: 127.0.0.1 / IPv6: ::1)</source>
         <translation>プロキシのIPアドレス (例えば IPv4: 127.0.0.1 / IPv6: ::1)</translation>
-    </message>
-    <message>
-        <source>Shows if the supplied default SOCKS5 proxy is used to reach peers via this network type.</source>
-        <translation>このネットワークタイプ経由で、与えられたデフォルトのSOCKS5プロキシを使用してピアに到達した場合に表示する。</translation>
-    </message>
-    <message>
-        <source>Use separate SOCKS&amp;5 proxy to reach peers via Tor hidden services:</source>
-        <translation>Tor秘匿サービス経由でピアに接続するために専用のSOCKS5プロキシを利用する:</translation>
-    </message>
-    <message>
-        <source>Hide the icon from the system tray.</source>
-        <translation>システムトレイのアイコンを隠す</translation>
-    </message>
-    <message>
-        <source>&amp;Hide tray icon</source>
-        <translation>トレイアイコンを隠す(&amp;H)</translation>
     </message>
     <message>
         <source>Minimize instead of exit the application when the window is closed. When this option is enabled, the application will be closed only after selecting Exit in the menu.</source>
@@ -1044,16 +1140,12 @@
         <translation>トランザクションタブのコンテキストメニュー項目に表示する、サードパーティURL (例えばブロックエクスプローラ)。URL中の%sはトランザクションのハッシュ値に置き換えられます。垂直バー | で区切ることで、複数のURLを指定できます。</translation>
     </message>
     <message>
+        <source>Third party transaction URLs</source>
+        <translation>サードパーティのトランザクションURL</translation>
+    </message>
+    <message>
         <source>Active command-line options that override above options:</source>
         <translation>上のオプションを置き換えることのできる、有効なコマンドラインオプションの一覧:</translation>
-    </message>
-    <message>
-        <source>Open the %1 configuration file from the working directory.</source>
-        <translation>%1の設定ファイルをワーキングディレクトリから開く。</translation>
-    </message>
-    <message>
-        <source>Open Configuration File</source>
-        <translation>設定ファイルを開く</translation>
     </message>
     <message>
         <source>Reset all client options to default.</source>
@@ -1069,7 +1161,7 @@
     </message>
     <message>
         <source>(0 = auto, &lt;0 = leave that many cores free)</source>
-        <translation>(0 = 自動、&lt;0 = 指定した数のコアをフリーにする)</translation>
+        <translation>(0 = 自動、0以上 = 指定した数のコアをフリーにする)</translation>
     </message>
     <message>
         <source>W&amp;allet</source>
@@ -1092,24 +1184,16 @@
         <translation>未検証のおつりを使用する (&amp;S)</translation>
     </message>
     <message>
-        <source>Automatically open the Bitcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
-        <translation>自動的にルーター上の MinersWorldCoin クライアントのポートを開きます。あなたのルーターが UPnP に対応していて、それが有効になっている場合に作動します。</translation>
+        <source>Automatically open the Minersworldcoin client port on the router. This only works when your router supports UPnP and it is enabled.</source>
+        <translation>自動的にルーター上の Minersworldcoin クライアントのポートを開きます。あなたのルーターが UPnP に対応していて、それが有効になっている場合に作動します。</translation>
     </message>
     <message>
         <source>Map port using &amp;UPnP</source>
         <translation>UPnP を使ってポートを割り当てる (&amp;U)</translation>
     </message>
     <message>
-        <source>Accept connections from outside.</source>
-        <translation>外部からの接続を許可する</translation>
-    </message>
-    <message>
-        <source>Allow incomin&amp;g connections</source>
-        <translation>外部からの接続を許可する (&amp;G)</translation>
-    </message>
-    <message>
-        <source>Connect to the Bitcoin network through a SOCKS5 proxy.</source>
-        <translation>SOCKS5 プロキシ経由でMinersWorldCoinネットワークに接続する</translation>
+        <source>Connect to the Minersworldcoin network through a SOCKS5 proxy.</source>
+        <translation>SOCKS5 プロキシ経由でMinersworldcoinネットワークに接続する</translation>
     </message>
     <message>
         <source>&amp;Connect through SOCKS5 proxy (default proxy):</source>
@@ -1132,6 +1216,10 @@
         <translation>ピアへ到達するために使われた方法:</translation>
     </message>
     <message>
+        <source>Shows, if the supplied default SOCKS5 proxy is used to reach peers via this network type.</source>
+        <translation>このネットワークタイプ経由で、与えられたデフォルトのSOCKS5プロキシを使用してピアに到達した場合に表示する。</translation>
+    </message>
+    <message>
         <source>IPv4</source>
         <translation>IPv4</translation>
     </message>
@@ -1144,12 +1232,24 @@
         <translation>Tor</translation>
     </message>
     <message>
-        <source>Connect to the Bitcoin network through a separate SOCKS5 proxy for Tor hidden services.</source>
-        <translation>Tor秘匿サービスを利用するため、独立なSOCKS5プロキシ経由でMinersWorldCoinネットワークに接続する</translation>
+        <source>Connect to the Minersworldcoin network through a separate SOCKS5 proxy for Tor hidden services.</source>
+        <translation>Tor秘匿サービスを利用するため、独立なSOCKS5プロキシ経由でMinersworldcoinネットワークに接続する</translation>
+    </message>
+    <message>
+        <source>Use separate SOCKS5 proxy to reach peers via Tor hidden services:</source>
+        <translation>Tor秘匿サービス経由でピアに到達するため、独立なSOCKS5プロキシを利用する:</translation>
     </message>
     <message>
         <source>&amp;Window</source>
         <translation>ウインドウ (&amp;W)</translation>
+    </message>
+    <message>
+        <source>&amp;Hide the icon from the system tray.</source>
+        <translation>システムトレイのアイコンを隠す (&amp;H)</translation>
+    </message>
+    <message>
+        <source>Hide tray icon</source>
+        <translation>トレイアイコンを隠す</translation>
     </message>
     <message>
         <source>Show only a tray icon after minimizing the window.</source>
@@ -1188,10 +1288,6 @@
         <translation>コインコントロール機能を表示するかどうか。</translation>
     </message>
     <message>
-        <source>&amp;Third party transaction URLs</source>
-        <translation>サードパーティのトランザクションURL (&amp;T)</translation>
-    </message>
-    <message>
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
     </message>
@@ -1220,28 +1316,28 @@
         <translation>クライアントを終了します。続行してもよろしいですか？</translation>
     </message>
     <message>
-        <source>Configuration options</source>
-        <translation>設定オプション</translation>
-    </message>
-    <message>
-        <source>The configuration file is used to specify advanced user options which override GUI settings. Additionally, any command-line options will override this configuration file.</source>
-        <translation>設定ファイルは高度なユーザオプションを指定するために利用され、GUI での設定をオーバーライドします。また、コマンドラインオプションはこの設定ファイルの内容をオーバーライドします</translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <translation>エラー</translation>
-    </message>
-    <message>
-        <source>The configuration file could not be opened.</source>
-        <translation>設定ファイルを開くことができませんでした。</translation>
-    </message>
-    <message>
         <source>This change would require a client restart.</source>
         <translation>この変更はクライアントの再起動が必要です。</translation>
     </message>
     <message>
         <source>The supplied proxy address is invalid.</source>
         <translation>プロキシアドレスが無効です。</translation>
+    </message>
+    <message>
+        <source>Disables some advanced features but all blocks will still be fully validated. Reverting this setting requires re-downloading the entire blockchain. Actual disk usage may be somewhat higher.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prune &amp;block storage to</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GB</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reverting this setting requires re-downloading the entire blockchain.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1251,8 +1347,8 @@
         <translation>フォーム</translation>
     </message>
     <message>
-        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</source>
-        <translation>表示された情報は古いかもしれません。接続が確立されると、あなたのウォレットは MinersWorldCoin ネットワークと自動的に同期しますが、このプロセスはまだ完了していません。</translation>
+        <source>The displayed information may be out of date. Your wallet automatically synchronizes with the Minersworldcoin network after a connection is established, but this process has not completed yet.</source>
+        <translation>表示された情報は古いかもしれません。接続が確立されると、あなたのウォレットは Minersworldcoin ネットワークと自動的に同期しますが、このプロセスはまだ完了していません。</translation>
     </message>
     <message>
         <source>Watch-only:</source>
@@ -1318,6 +1414,229 @@
         <source>Current total balance in watch-only addresses</source>
         <translation>監視限定アドレス内の現在の全残高</translation>
     </message>
+    <message>
+        <source>Helpful tip of the day:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tip</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Encrypt your wallet with a strong passphrase for maximum security</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Backup your private key to recover your coins, using &apos;File&apos; &gt; &apos;Backup Wallet&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Always do your own research before using an external cryptocurrency service</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Services that claim to double your minersworldcoins are always ponzi schemes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Never share your wallet.dat file with anyone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>For advanced operations, use the console in &apos;Help&apos; -&gt; &apos;Debug Window&apos;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Make sure to keep your wallet software updated</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Never share your private key with anyone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Who owns the private keys, owns the coins</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>To see ongoing development and contribute, check out the Minersworldcoin Core repository on GitHub</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>PaperWalletDialog</name>
+    <message>
+        <source>Print Your Paper Wallets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New Address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Print</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Many Wallets?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>4</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>5</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>6</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>7</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>8</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>9</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>10</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>11</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>12</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Sans Serif&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Public Key:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warning: Network Activity Detected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>It is recommended to disconnect from the internet before printing paper wallets. Even though paper wallets are generated on your local computer, it is still possible to unknowingly have malware that transmits your screen to a remote location. It is also recommended to print to a local printer vs a network printer since that network traffic can be monitored. Some advanced printers also store copies of each printed document. Proceed with caution relative to the amount of value you plan to store on each address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error encoding Address into QR Code.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error encoding private key into QR Code.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Printing Error</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>failed to open file, is it writable?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Load Paper Wallets</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The paper wallet printing process has begun.&lt;br/&gt;Please wait for the wallets to print completely and verify that everything printed correctly.&lt;br/&gt;Check for misalignments, ink bleeding, smears, or anything else that could make the private keys unreadable.&lt;br/&gt;Now, enter the number of ARCH you wish to send to each wallet:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paper wallet %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;%1&lt;/b&gt; to Paper Wallet &lt;span style=&apos;font-family: monospace;&apos;&gt;%2&lt;/span&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Send Coins</source>
+        <translation type="unfinished">コインを送る</translation>
+    </message>
+    <message>
+        <source>The recipient address is not valid, please recheck.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The amount to pay must be larger than 0</source>
+        <translation type="unfinished">支払額は0より大きくないといけません。 {0?}</translation>
+    </message>
+    <message>
+        <source>The amount exceeds your balance.</source>
+        <translation type="unfinished">額が残高を超えています。</translation>
+    </message>
+    <message>
+        <source>The total exceeds your balance when the transaction fee is included</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplicate address found, can only send to each address once per send operation.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Transaction creation failed!</source>
+        <translation type="unfinished">トラザクションの作成に失敗しました!</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to send?</source>
+        <translation type="unfinished">送ってよろしいですか？</translation>
+    </message>
+    <message>
+        <source>added as transaction fee</source>
+        <translation type="unfinished">取引手数料として追加された</translation>
+    </message>
+    <message>
+        <source>Total Amount %1 (= %2)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>or</source>
+        <translation type="unfinished">または</translation>
+    </message>
+    <message>
+        <source>Confirm send coins</source>
+        <translation type="unfinished">コインを送る確認</translation>
+    </message>
+    <message>
+        <source>The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of wallet.dat and coins were spent in the copy but not marked as spent here.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PaymentServer</name>
@@ -1326,8 +1645,8 @@
         <translation>支払いのリクエストのエラーです</translation>
     </message>
     <message>
-        <source>Cannot start bitcoin: click-to-pay handler</source>
-        <translation>MinersWorldCoin を起動できません: click-to-pay handler</translation>
+        <source>Cannot start minersworldcoin: click-to-pay handler</source>
+        <translation>Minersworldcoin を起動できません: click-to-pay handler</translation>
     </message>
     <message>
         <source>URI handling</source>
@@ -1342,8 +1661,8 @@
         <translation>支払いのアドレス「%1」は無効です</translation>
     </message>
     <message>
-        <source>URI cannot be parsed! This can be caused by an invalid Bitcoin address or malformed URI parameters.</source>
-        <translation>URI を解析できません! これは無効な MinersWorldCoin アドレスあるいは不正な形式の URI パラメーターによって引き起こされる場合があります。</translation>
+        <source>URI cannot be parsed! This can be caused by an invalid Minersworldcoin address or malformed URI parameters.</source>
+        <translation>URI を解析できません! これは無効な Minersworldcoin アドレスあるいや不正な形式の URI パラメーターによって引き起こされる場合があります。</translation>
     </message>
     <message>
         <source>Payment request file handling</source>
@@ -1358,7 +1677,7 @@
         <translation>支払い要求は拒否されました</translation>
     </message>
     <message>
-        <source>Payment request network doesn't match client network.</source>
+        <source>Payment request network doesn&apos;t match client network.</source>
         <translation>支払いリクエストのネットワークは現在のクライアントのネットワークに一致しません。</translation>
     </message>
     <message>
@@ -1376,10 +1695,6 @@
     <message>
         <source>Invalid payment request.</source>
         <translation>無効な支払いリクエスト。</translation>
-    </message>
-    <message>
-        <source>Requested payment amount of %1 is too small (considered dust).</source>
-        <translation>要求された支払額 %1 は少なすぎます (ダストとみなされてしまいます)。</translation>
     </message>
     <message>
         <source>Refund from %1</source>
@@ -1409,6 +1724,10 @@
         <source>Payment acknowledged</source>
         <translation>支払いは確認しました</translation>
     </message>
+    <message>
+        <source>Requested payment amount of %1 is too small (below discard threshold).</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>PeerTableModel</name>
@@ -1429,12 +1748,43 @@
         <translation>Ping</translation>
     </message>
     <message>
-        <source>Sent</source>
-        <translation>送信</translation>
+        <source>Bytes Sent</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Received</source>
-        <translation>受信</translation>
+        <source>Bytes Received</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>PeerTools</name>
+    <message>
+        <source>Error: Peer-to-peer functionality missing or disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Attempted to one try node.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Node not found in connected nodes</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disconnected the node: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Returned OK.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error: Node address is invalid</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error: Unable to add node</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1444,8 +1794,8 @@
         <translation>総額</translation>
     </message>
     <message>
-        <source>Enter a Bitcoin address (e.g. %1)</source>
-        <translation>MinersWorldCoinアドレスを入力してください (例 %1)</translation>
+        <source>Enter a Minersworldcoin address (e.g. %1)</source>
+        <translation>Minersworldcoinアドレスを入力してください (例 %1)</translation>
     </message>
     <message>
         <source>%1 d</source>
@@ -1477,23 +1827,33 @@
     </message>
     <message numerus="yes">
         <source>%n second(s)</source>
-        <translation><numerusform>%n 秒</numerusform></translation>
+        <translation>
+            <numerusform>%n 秒</numerusform>
+        </translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s)</source>
-        <translation><numerusform>%n 分</numerusform></translation>
+        <translation>
+            <numerusform>%n 分</numerusform>
+        </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s)</source>
-        <translation><numerusform>%n 時間</numerusform></translation>
+        <translation>
+            <numerusform>%n 時間</numerusform>
+        </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s)</source>
-        <translation><numerusform>%n 日</numerusform></translation>
+        <translation>
+            <numerusform>%n 日</numerusform>
+        </translation>
     </message>
     <message numerus="yes">
         <source>%n week(s)</source>
-        <translation><numerusform>%n 週間</numerusform></translation>
+        <translation>
+            <numerusform>%n 週間</numerusform>
+        </translation>
     </message>
     <message>
         <source>%1 and %2</source>
@@ -1501,38 +1861,40 @@
     </message>
     <message numerus="yes">
         <source>%n year(s)</source>
-        <translation><numerusform>%n 年</numerusform></translation>
+        <translation>
+            <numerusform>%n 年</numerusform>
+        </translation>
     </message>
     <message>
-        <source>%1 B</source>
-        <translation>%1 B</translation>
-    </message>
-    <message>
-        <source>%1 KB</source>
-        <translation>%1 KB</translation>
-    </message>
-    <message>
-        <source>%1 MB</source>
-        <translation>%1 MB</translation>
-    </message>
-    <message>
-        <source>%1 GB</source>
-        <translation>%1 GB</translation>
-    </message>
-    <message>
-        <source>%1 didn't yet exit safely...</source>
+        <source>%1 didn&apos;t yet exit safely...</source>
         <translation>%1 はまだ安全に終了していません...</translation>
     </message>
     <message>
-        <source>unknown</source>
-        <translation>未確認</translation>
+        <source>%1 B</source>
+        <translation type="unfinished">%1 B</translation>
+    </message>
+    <message>
+        <source>%1 GB</source>
+        <translation type="obsolete">%1 GB</translation>
+    </message>
+    <message>
+        <source>%1 MB</source>
+        <translation type="unfinished">%1 MB</translation>
+    </message>
+    <message>
+        <source>%1 KB</source>
+        <translation type="obsolete">%1 KB</translation>
+    </message>
+    <message>
+        <source>%1 kB</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>QObject::QObject</name>
     <message>
-        <source>Error: Specified data directory "%1" does not exist.</source>
-        <translation>エラー: 指定のデータ ディレクトリ "%1" は存在しません。</translation>
+        <source>Error: Specified data directory &quot;%1&quot; does not exist.</source>
+        <translation>エラー: 指定のデータ ディレクトリ &quot;%1&quot; は存在しません。</translation>
     </message>
     <message>
         <source>Error: Cannot parse configuration file: %1. Only use key=value syntax.</source>
@@ -1629,16 +1991,12 @@
         <translation>メモリ使用量</translation>
     </message>
     <message>
-        <source>&amp;Reset</source>
-        <translation>リセット (&amp;R)</translation>
-    </message>
-    <message>
         <source>Received</source>
-        <translation>受信</translation>
+        <translation>受取</translation>
     </message>
     <message>
         <source>Sent</source>
-        <translation>送信</translation>
+        <translation>送金</translation>
     </message>
     <message>
         <source>&amp;Peers</source>
@@ -1749,6 +2107,10 @@
         <translation>ネットワーク (&amp;N)</translation>
     </message>
     <message>
+        <source>&amp;Clear</source>
+        <translation>クリア(&amp;C)</translation>
+    </message>
+    <message>
         <source>Totals</source>
         <translation>合計</translation>
     </message>
@@ -1801,24 +2163,36 @@
         <translation>%1 のRPCコンソールへようこそ。</translation>
     </message>
     <message>
-        <source>Use up and down arrows to navigate history, and %1 to clear screen.</source>
-        <translation>上下の矢印で履歴をたどれます。%1でスクリーンを消去できます。</translation>
+        <source>Use up and down arrows to navigate history, and &lt;b&gt;Ctrl-L&lt;/b&gt; to clear screen.</source>
+        <translation>上下の矢印で履歴をたどれます。 &lt;b&gt;Ctrl-L&lt;/b&gt; でスクリーンを消去できます。</translation>
     </message>
     <message>
-        <source>Type %1 for an overview of available commands.</source>
-        <translation>使用可能なコマンドを見るには %1 と入力します。</translation>
+        <source>Type &lt;b&gt;help&lt;/b&gt; for an overview of available commands.</source>
+        <translation>使用可能なコマンドを見るには &lt;b&gt;help&lt;/b&gt; と入力します。</translation>
     </message>
     <message>
-        <source>For more information on using this console type %1.</source>
-        <translation>さらに情報を得たい方は、コンソールで  %1 を入力してください。</translation>
-    </message>
-    <message>
-        <source>WARNING: Scammers have been active, telling users to type commands here, stealing their wallet contents. Do not use this console without fully understanding the ramifications of a command.</source>
+        <source>WARNING: Scammers have been active, telling users to type commands here, stealing their wallet contents. Do not use this console without fully understanding the ramification of a command.</source>
         <translation>警告: 詐欺師が活動しており、ユーザに対してここにコマンドを入力させることでウォレットの中身を盗もうとしています。コマンドの結果を完全に理解していない限り、このコンソールは利用しないでください。</translation>
     </message>
     <message>
         <source>Network activity disabled</source>
         <translation>ネットワーク活動は無効化されました</translation>
+    </message>
+    <message>
+        <source>%1 B</source>
+        <translation>%1 B</translation>
+    </message>
+    <message>
+        <source>%1 KB</source>
+        <translation>%1 KB</translation>
+    </message>
+    <message>
+        <source>%1 MB</source>
+        <translation>%1 MB</translation>
+    </message>
+    <message>
+        <source>%1 GB</source>
+        <translation>%1 GB</translation>
     </message>
     <message>
         <source>(node id: %1)</source>
@@ -1852,6 +2226,38 @@
         <source>Unknown</source>
         <translation>未知</translation>
     </message>
+    <message>
+        <source>Connected peers</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add new peer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove peer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>One try peer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <translation type="unfinished">エラー</translation>
+    </message>
+    <message>
+        <source>Remove Peer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Are you sure you want to remove the peer: </source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No peer was selected.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ReceiveCoinsDialog</name>
@@ -1868,8 +2274,16 @@
         <translation>メッセージ (&amp;M):</translation>
     </message>
     <message>
-        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Bitcoin network.</source>
-        <translation>支払リクエストが開始された時に表示される、支払リクエストに添える任意のメッセージです。注意：メッセージはMinersWorldCoinネットワークを通じて、支払と共に送られるわけではありません。</translation>
+        <source>Reuse one of the previously used receiving addresses. Reusing addresses has security and privacy issues. Do not use this unless re-generating a payment request made before.</source>
+        <translation>以前利用した受取用アドレスのどれかを再利用します。アドレスの再利用はセキュリティおよびプライバシーにおいて問題があります。以前作成した支払リクエストを再生成するとき以外は利用しないでください。</translation>
+    </message>
+    <message>
+        <source>R&amp;euse an existing receiving address (not recommended)</source>
+        <translation>既存の受取用アドレスを再利用する (非推奨) (&amp;E)</translation>
+    </message>
+    <message>
+        <source>An optional message to attach to the payment request, which will be displayed when the request is opened. Note: The message will not be sent with the payment over the Minersworldcoin network.</source>
+        <translation>支払リクエストが開始された時に表示される、支払リクエストに添える任意のメッセージです。注意：メッセージはMinersworldcoinネットワークを通じて、支払と共に送られるわけではありません。</translation>
     </message>
     <message>
         <source>An optional label to associate with the new receiving address.</source>
@@ -1890,14 +2304,6 @@
     <message>
         <source>Clear</source>
         <translation>クリア</translation>
-    </message>
-    <message>
-        <source>Native segwit addresses (aka Bech32 or BIP-173) reduce your transaction fees later on and offer better protection against typos, but old wallets don&apos;t support them. When unchecked, an address compatible with older wallets will be created instead.</source>
-        <translation>Native segwitアドレス（別名Bech32、BIP-173）は取引手数料が安くなり、誤記に対する保護も強くなりますが、古いウォレットでは扱えません。チェックを外すと、古いウォレットと互換性のあるアドレスを生成します。</translation>
-    </message>
-    <message>
-        <source>Generate native segwit (Bech32) address</source>
-        <translation>Native segwit (Bech32)アドレスを生成</translation>
     </message>
     <message>
         <source>Requested payments history</source>
@@ -2089,14 +2495,6 @@
         <translation>選択……</translation>
     </message>
     <message>
-        <source>Using the fallbackfee can result in sending a transaction that will take several hours or days (or never) to confirm. Consider choosing your fee manually or wait until you have validated the complete chain.</source>
-        <translation> 代替料金を利用することで、承認されるまでに数時間または数日 (ないし一生承認されない) トランザクションを送信してしまう可能性があります。手動にて手数料を選択するか、完全なブロックチェーンの検証が終わるまで待つことを検討しましょう</translation>
-    </message>
-    <message>
-        <source>Warning: Fee estimation is currently not possible.</source>
-        <translation>警告: 手数料推定機能は現在利用できません。</translation>
-    </message>
-    <message>
         <source>collapse fee-settings</source>
         <translation>手数料設定を折りたたむ</translation>
     </message>
@@ -2105,15 +2503,15 @@
         <translation>1キロバイトあたり手数料</translation>
     </message>
     <message>
-        <source>If the custom fee is set to 1000 satoshis and the transaction is only 250 bytes, then "per kilobyte" only pays 250 satoshis in fee, while "total at least" pays 1000 satoshis. For transactions bigger than a kilobyte both pay by kilobyte.</source>
-        <translation>カスタム手数料が1000satoshiに設定されている場合、トランザクションサイズが250バイトとすると、「1キロバイトあたり手数料」では250satoshiの手数料のみを支払いますが、「最小手数料」では1000satoshiを支払います。1キロバイトを超えるトランザクションの場合には、どちらの方法を選択したとしても1キロバイトあたりで支払われます。</translation>
-    </message>
-    <message>
         <source>Hide</source>
         <translation>隠す</translation>
     </message>
     <message>
-        <source>Paying only the minimum fee is just fine as long as there is less transaction volume than space in the blocks. But be aware that this can end up in a never confirming transaction once there is more demand for bitcoin transactions than the network can process.</source>
+        <source>total at least</source>
+        <translation>最小手数料</translation>
+    </message>
+    <message>
+        <source>Paying only the minimum fee is just fine as long as there is less transaction volume than space in the blocks. But be aware that this can end up in a never confirming transaction once there is more demand for minersworldcoin transactions than the network can process.</source>
         <translation>ブロックの容量に比べてトランザクション流量が少ないうちは最小手数料のみの支払で十分です。しかしながらネットワークが処理しきれないほどminersworldcoinトランザクションの需要がひとたび生まれてしまった場合には、永遠に検証がされないトランザクションになってしまう可能性があることに注意してください。</translation>
     </message>
     <message>
@@ -2127,10 +2525,6 @@
     <message>
         <source>Custom:</source>
         <translation>カスタム：</translation>
-    </message>
-    <message>
-        <source>(Smart fee not initialized yet. This usually takes a few blocks...)</source>
-        <translation>（スマート手数料はまだ初期化されていません。これにはおおよそ数ブロックほどかかります……）</translation>
     </message>
     <message>
         <source>Send to multiple recipients at once</source>
@@ -2147,18 +2541,6 @@
     <message>
         <source>Dust:</source>
         <translation>ダスト：</translation>
-    </message>
-    <message>
-        <source>Confirmation time target:</source>
-        <translation>検証時間のターゲット:</translation>
-    </message>
-    <message>
-        <source>Enable Replace-By-Fee</source>
-        <translation>Replace-By-Fee を有効</translation>
-    </message>
-    <message>
-        <source>With Replace-By-Fee (BIP-125) you can increase a transaction's fee after it is sent. Without this, a higher fee may be recommended to compensate for increased transaction delay risk.</source>
-        <translation>手数料の上乗せ(Replace-By-Fee: BIP-125を参照)によってトランザクションを送信した後でも手数料を上乗せすることができます。この機能を利用しない場合、予め手数料を多めに見積もっておかないと送金が遅れる可能性があります。</translation>
     </message>
     <message>
         <source>Clear &amp;All</source>
@@ -2205,10 +2587,6 @@
         <translation>釣り銭をコピー</translation>
     </message>
     <message>
-        <source>%1 (%2 blocks)</source>
-        <translation>%1 (%2 ブロック)</translation>
-    </message>
-    <message>
         <source>%1 to %2</source>
         <translation>%1 から %2</translation>
     </message>
@@ -2222,19 +2600,11 @@
     </message>
     <message>
         <source>Total Amount %1</source>
-        <translation>合計：　%1</translation>
+        <translation>合計：&#x3000;%1</translation>
     </message>
     <message>
         <source>or</source>
         <translation>または</translation>
-    </message>
-    <message>
-        <source>You can increase the fee later (signals Replace-By-Fee, BIP-125).</source>
-        <translation>手数料は後から上乗せすることができます(Replace-By-Feeのシグナル: BIP-125を参照)。</translation>
-    </message>
-    <message>
-        <source>Not signalling Replace-By-Fee, BIP-125.</source>
-        <translation>BIP-125による手数料上乗せ機能を利用していません。</translation>
     </message>
     <message>
         <source>Confirm send coins</source>
@@ -2280,13 +2650,9 @@
         <source>Pay only the required fee of %1</source>
         <translation>要求手数料 %1 のみを支払う</translation>
     </message>
-    <message numerus="yes">
-        <source>Estimated to begin confirmation within %n block(s).</source>
-        <translation><numerusform>%n ブロック以内に検証が開始されると予想されます。</numerusform></translation>
-    </message>
     <message>
-        <source>Warning: Invalid Bitcoin address</source>
-        <translation>警告：無効なMinersWorldCoinアドレスです</translation>
+        <source>Warning: Invalid Minersworldcoin address</source>
+        <translation>警告：無効なMinersworldcoinアドレスです</translation>
     </message>
     <message>
         <source>Warning: Unknown change address</source>
@@ -2303,6 +2669,30 @@
     <message>
         <source>(no label)</source>
         <translation>（ラベル無し）</translation>
+    </message>
+    <message>
+        <source>Warning: Fee estimation is currently not possible.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>If the custom fee is set to 1000 yelps and the transaction is only 250 bytes, then &quot;per kilobyte&quot; only pays 250 yelps in fee, while &quot;total at least&quot; pays 1000 yelps. For transactions bigger than a kilobyte both pay by kilobyte.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Priority:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>low</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>high</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Using the fallbackfee can result in sending a transaction that will take several hours or days (or never) to confirm. Consider choosing your fee manually or wait until you have validated the complete chain.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -2328,8 +2718,8 @@
         <translation>これは通常の支払です。</translation>
     </message>
     <message>
-        <source>The MinersWorldCoin address to send the payment to</source>
-        <translation>支払の送金先MinersWorldCoinアドレス</translation>
+        <source>The Minersworldcoin address to send the payment to</source>
+        <translation>支払の送金先Minersworldcoinアドレス</translation>
     </message>
     <message>
         <source>Alt+A</source>
@@ -2348,16 +2738,12 @@
         <translation>この項目を削除する</translation>
     </message>
     <message>
-        <source>The fee will be deducted from the amount being sent. The recipient will receive less bitcoins than you enter in the amount field. If multiple recipients are selected, the fee is split equally.</source>
-        <translation>送金する金額から手数料が差し引かれます。受取人は数量フィールドで指定した量よりも少ないMinersWorldCoinを受け取ります。受取人が複数いる場合には、手数料は均等割されます。</translation>
+        <source>The fee will be deducted from the amount being sent. The recipient will receive less minersworldcoins than you enter in the amount field. If multiple recipients are selected, the fee is split equally.</source>
+        <translation>送金する金額から手数料が差し引かれます。受取人は数量フィールドで指定した量よりも少ないドージコインを受け取ります。受取人が複数いる場合には、手数料は均等割されます。</translation>
     </message>
     <message>
         <source>S&amp;ubtract fee from amount</source>
         <translation>送金額から手数料を差し引く (&amp;U)</translation>
-    </message>
-    <message>
-        <source>Use available balance</source>
-        <translation>利用可能な残額を使用</translation>
     </message>
     <message>
         <source>Message:</source>
@@ -2376,8 +2762,8 @@
         <translation>このアドレスに対するラベルを入力することで、使用済みアドレスの一覧に追加することができます</translation>
     </message>
     <message>
-        <source>A message that was attached to the bitcoin: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Bitcoin network.</source>
-        <translation>minersworldcoin: URIに添付されていたメッセージです。これは参照用としてトランザクションとともに保存されます。注意：このメッセージはMinersWorldCoinネットワークを通して送信されるわけではありません。</translation>
+        <source>A message that was attached to the minersworldcoin: URI which will be stored with the transaction for your reference. Note: This message will not be sent over the Minersworldcoin network.</source>
+        <translation>minersworldcoin: URIに添付されていたメッセージです。これは参照用としてトランザクションとともに保存されます。注意：このメッセージはMinersworldcoinネットワークを通して送信されるわけではありません。</translation>
     </message>
     <message>
         <source>Pay To:</source>
@@ -2421,12 +2807,12 @@
         <translation>メッセージの署名 (&amp;S)</translation>
     </message>
     <message>
-        <source>You can sign messages/agreements with your addresses to prove you can receive bitcoins sent to them. Be careful not to sign anything vague or random, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
-        <translation>あなたの所有しているアドレスによりメッセージや合意書に署名をすることで、それらアドレスに対して送られたMinersWorldCoinを受け取ることができることを証明できます。フィッシング攻撃により不正にあなたの識別情報を署名させられてしまうことを防ぐために、不明確なものやランダムなものに対して署名しないよう注意してください。合意することが可能な、よく詳細の記された文言にのみ署名するようにしてください。</translation>
+        <source>You can sign messages/agreements with your addresses to prove you can receive minersworldcoins sent to them. Be careful not to sign anything vague or random, as phishing attacks may try to trick you into signing your identity over to them. Only sign fully-detailed statements you agree to.</source>
+        <translation>あなたの所有しているアドレスによりメッセージや合意書に署名をすることで、それらアドレスに対して送られたドージコインを受け取ることができることを証明できます。フィッシング攻撃により不正にあなたの識別情報を署名させられてしまうことを防ぐために、不明確なものやランダムなものに対して署名しないよう注意してください。合意することが可能な、よく詳細の記された文言にのみ署名するようにしてください。</translation>
     </message>
     <message>
-        <source>The MinersWorldCoin address to sign the message with</source>
-        <translation>メッセージを署名するMinersWorldCoinアドレス</translation>
+        <source>The Minersworldcoin address to sign the message with</source>
+        <translation>メッセージを署名するMinersworldcoinアドレス</translation>
     </message>
     <message>
         <source>Choose previously used address</source>
@@ -2457,8 +2843,8 @@
         <translation>現在の署名をシステムのクリップボードにコピーする</translation>
     </message>
     <message>
-        <source>Sign the message to prove you own this Bitcoin address</source>
-        <translation>この MinersWorldCoin アドレスを所有していることを証明するためにメッセージに署名</translation>
+        <source>Sign the message to prove you own this Minersworldcoin address</source>
+        <translation>この Minersworldcoin アドレスを所有していることを証明するためにメッセージに署名</translation>
     </message>
     <message>
         <source>Sign &amp;Message</source>
@@ -2477,16 +2863,16 @@
         <translation>メッセージの検証 (&amp;V)</translation>
     </message>
     <message>
-        <source>Enter the receiver's address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack. Note that this only proves the signing party receives with the address, it cannot prove sendership of any transaction!</source>
+        <source>Enter the receiver&apos;s address, message (ensure you copy line breaks, spaces, tabs, etc. exactly) and signature below to verify the message. Be careful not to read more into the signature than what is in the signed message itself, to avoid being tricked by a man-in-the-middle attack. Note that this only proves the signing party receives with the address, it cannot prove sendership of any transaction!</source>
         <translation>受取人のアドレスとメッセージ（改行やスペース、タブなども完全に一致するよう注意してください）および署名を以下に入力し、メッセージの署名を検証してください。中間者攻撃により騙されるのを防ぐため、署名対象のメッセージに書かれていること以上の意味を署名から読み取ろうとしないよう注意してください。これは署名作成者がこのアドレスで受け取ったことを証明するだけであり、トランザクションの送信権限を証明するものではないことに注意してください！</translation>
     </message>
     <message>
-        <source>The Bitcoin address the message was signed with</source>
-        <translation>メッセージの署名に使われたMinersWorldCoinアドレス</translation>
+        <source>The Minersworldcoin address the message was signed with</source>
+        <translation>メッセージの署名に使われたMinersworldcoinアドレス</translation>
     </message>
     <message>
-        <source>Verify the message to ensure it was signed with the specified Bitcoin address</source>
-        <translation>指定された MinersWorldCoin アドレスで署名されたことを保証するメッセージを検証</translation>
+        <source>Verify the message to ensure it was signed with the specified Minersworldcoin address</source>
+        <translation>指定された Minersworldcoin アドレスで署名されたことを保証するメッセージを検証</translation>
     </message>
     <message>
         <source>Verify &amp;Message</source>
@@ -2497,8 +2883,8 @@
         <translation>入力項目の内容をすべて消去します</translation>
     </message>
     <message>
-        <source>Click "Sign Message" to generate signature</source>
-        <translation>署名を作成するには"メッセージの署名"をクリック</translation>
+        <source>Click &quot;Sign Message&quot; to generate signature</source>
+        <translation>署名を作成するには&quot;メッセージの署名&quot;をクリック</translation>
     </message>
     <message>
         <source>The entered address is invalid.</source>
@@ -2557,6 +2943,45 @@
     </message>
 </context>
 <context>
+    <name>TestPeerDialog</name>
+    <message>
+        <source>Test Peer</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter the peer details below.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Be careful! Do not blindly trust anyone that tells you to add their node.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter the peer&apos;s address</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enter the peer&apos;s port</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Test!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please enter an address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Please enter a valid peer address.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Try Peer</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>TrafficGraphWidget</name>
     <message>
         <source>KB/s</source>
@@ -2567,7 +2992,9 @@
     <name>TransactionDesc</name>
     <message numerus="yes">
         <source>Open for %n more block(s)</source>
-        <translation><numerusform>%n 以上のブロックを開く</numerusform></translation>
+        <translation>
+            <numerusform>%n 以上のブロックを開く</numerusform>
+        </translation>
     </message>
     <message>
         <source>Open until %1</source>
@@ -2579,7 +3006,7 @@
     </message>
     <message>
         <source>%1/offline</source>
-        <translation>%1/オフライン</translation>
+        <translation type="vanished">%1/オフライン</translation>
     </message>
     <message>
         <source>0/unconfirmed, %1</source>
@@ -2611,11 +3038,13 @@
     </message>
     <message>
         <source>, has not been successfully broadcast yet</source>
-        <translation>まだブロードキャストが成功していません</translation>
+        <translation type="vanished">まだブロードキャストが成功していません</translation>
     </message>
     <message numerus="yes">
         <source>, broadcast through %n node(s)</source>
-        <translation><numerusform>%n ノードにブロードキャスト</numerusform></translation>
+        <translation type="vanished">
+            <numerusform>%n ノードにブロードキャスト</numerusform>
+        </translation>
     </message>
     <message>
         <source>Date</source>
@@ -2659,7 +3088,9 @@
     </message>
     <message numerus="yes">
         <source>matures in %n more block(s)</source>
-        <translation><numerusform>あと %n ブロックで成熟します</numerusform></translation>
+        <translation>
+            <numerusform>あと %n ブロックで成熟します</numerusform>
+        </translation>
     </message>
     <message>
         <source>not accepted</source>
@@ -2710,8 +3141,8 @@
         <translation>商人</translation>
     </message>
     <message>
-        <source>Generated coins must mature %1 blocks before they can be spent. When you generated this block, it was broadcast to the network to be added to the block chain. If it fails to get into the chain, its state will change to "not accepted" and it won't be spendable. This may occasionally happen if another node generates a block within a few seconds of yours.</source>
-        <translation>生成されたコインは使う前に%1のブロックを完成させる必要があります。あなたが生成した時、このブロックはブロック チェーンに追加されるネットワークにブロードキャストされました。チェーンに追加されるのが失敗した場合、状態が"不承認"に変更されて使えなくなるでしょう。これは、別のノードがあなたの数秒前にブロックを生成する場合に時々起こるかもしれません。</translation>
+        <source>Generated coins must mature %1 blocks before they can be spent. When you generated this block, it was broadcast to the network to be added to the block chain. If it fails to get into the chain, its state will change to &quot;not accepted&quot; and it won&apos;t be spendable. This may occasionally happen if another node generates a block within a few seconds of yours.</source>
+        <translation>生成されたコインは使う前に%1のブロックを完成させる必要があります。あなたが生成した時、このブロックはブロック チェーンに追加されるネットワークにブロードキャストされました。チェーンに追加されるのが失敗した場合、状態が&quot;不承認&quot;に変更されて使えなくなるでしょう。これは、別のノードがあなたの数秒前にブロックを生成する場合に時々起こるかもしれません。</translation>
     </message>
     <message>
         <source>Debug information</source>
@@ -2765,7 +3196,9 @@
     </message>
     <message numerus="yes">
         <source>Open for %n more block(s)</source>
-        <translation><numerusform>%n 以上のブロックを開く</numerusform></translation>
+        <translation>
+            <numerusform>%n 以上のブロックを開く</numerusform>
+        </translation>
     </message>
     <message>
         <source>Open until %1</source>
@@ -2773,7 +3206,7 @@
     </message>
     <message>
         <source>Offline</source>
-        <translation>オフライン</translation>
+        <translation type="vanished">オフライン</translation>
     </message>
     <message>
         <source>Unconfirmed</source>
@@ -2801,7 +3234,7 @@
     </message>
     <message>
         <source>This block was not received by any other nodes and will probably not be accepted!</source>
-        <translation>このブロックは他のどのノードによっても受け取られないで、多分受け入れられないでしょう！</translation>
+        <translation type="vanished">このブロックは他のどのノードによっても受け取られないで、多分受け入れられないでしょう！</translation>
     </message>
     <message>
         <source>Generated but not accepted</source>
@@ -2915,8 +3348,8 @@
         <translation>その他</translation>
     </message>
     <message>
-        <source>Enter address, transaction id, or label to search</source>
-        <translation>検索するアドレス、トランザクションID、またはラベルを入力してください</translation>
+        <source>Enter address or label to search</source>
+        <translation>検索するアドレスまたはラベルを入力</translation>
     </message>
     <message>
         <source>Min amount</source>
@@ -2925,10 +3358,6 @@
     <message>
         <source>Abandon transaction</source>
         <translation>取引の中止</translation>
-    </message>
-    <message>
-        <source>Increase transaction fee</source>
-        <translation>トランザクション手数料を増額する</translation>
     </message>
     <message>
         <source>Copy address</source>
@@ -3043,42 +3472,6 @@
         <source>Send Coins</source>
         <translation>コインを送る</translation>
     </message>
-    <message>
-        <source>Fee bump error</source>
-        <translation>手数料の引き上げエラー</translation>
-    </message>
-    <message>
-        <source>Increasing transaction fee failed</source>
-        <translation>トランザクション手数料の増額に失敗しました</translation>
-    </message>
-    <message>
-        <source>Do you want to increase the fee?</source>
-        <translation>手数料を増額してもよろしいですか？</translation>
-    </message>
-    <message>
-        <source>Current fee:</source>
-        <translation>現在の手数料:</translation>
-    </message>
-    <message>
-        <source>Increase:</source>
-        <translation>増加:</translation>
-    </message>
-    <message>
-        <source>New fee:</source>
-        <translation>新しい手数料:</translation>
-    </message>
-    <message>
-        <source>Confirm fee bump</source>
-        <translation>手数料の引き上げ確認</translation>
-    </message>
-    <message>
-        <source>Can't sign transaction.</source>
-        <translation>トランザクションを署名できませんでした。</translation>
-    </message>
-    <message>
-        <source>Could not commit transaction</source>
-        <translation>トランザクションのコミットに失敗しました</translation>
-    </message>
 </context>
 <context>
     <name>WalletView</name>
@@ -3138,6 +3531,14 @@
         <translation>コマンドラインと JSON-RPC コマンドを許可</translation>
     </message>
     <message>
+        <source>Accept connections from outside (default: 1 if no -proxy or -connect/-noconnect)</source>
+        <translation>外部からの接続を許可 (初期値: -proxy または -connect/-noconnect を使用していない場合は1)</translation>
+    </message>
+    <message>
+        <source>Connect only to the specified node(s); -noconnect or -connect=0 alone to disable automatic connections</source>
+        <translation>指定されたノードにのみ接続を行う; -noconnect または -connect=0 だけを指定すると自動接続を無効化します</translation>
+    </message>
+    <message>
         <source>Distributed under the MIT software license, see the accompanying file %s or %s</source>
         <translation>MITソフトウェアライセンスのもとで配布されています。付属のファイル %s または %s を参照してください</translation>
     </message>
@@ -3178,16 +3579,12 @@
         <translation>HTTPサーバを開始できませんでした。詳細はデバッグログをご確認ください。</translation>
     </message>
     <message>
-        <source>Bitcoin Core</source>
-        <translation>MinersWorldCoin のコア</translation>
+        <source>Minersworldcoin Core</source>
+        <translation>Minersworldcoin のコア</translation>
     </message>
     <message>
         <source>The %s developers</source>
         <translation>%s の開発者</translation>
-    </message>
-    <message>
-        <source>-sysperms is not allowed in combination with enabled wallet functionality</source>
-        <translation>-sysperms は有効化されているウォレットの機能と同時に使うことができません</translation>
     </message>
     <message>
         <source>A fee rate (in %s/kB) that will be used when fee estimation has insufficient data (default: %s)</source>
@@ -3198,36 +3595,24 @@
         <translation>トランザクションの中継を行っていない場合でも、ホワイトリストのピアから受け取った中継トランザクションは受け取るようにする (デフォルト: %d)</translation>
     </message>
     <message>
-        <source>Add a node to connect to and attempt to keep the connection open (see the `addnode` RPC command help for more info)</source>
-        <translation>ネットワークとの接続を開始・維持するためにノードを手動で追加する(addnodeのRPCコマンドヘルプを参照)</translation>
-    </message>
-    <message>
         <source>Bind to given address and always listen on it. Use [host]:port notation for IPv6</source>
-        <translation>指定のアドレスへバインドし、その上で常にリッスンします。IPv6 は [ホスト名]:ポート番号 と表記します</translation>
+        <translation>指定のアドレスへバインドし、その上で常にリスンします。IPv6 は [ホスト名]:ポート番号 と表記します</translation>
     </message>
     <message>
         <source>Cannot obtain a lock on data directory %s. %s is probably already running.</source>
         <translation>データ ディレクトリ %s のロックを取得することができません。おそらく %s は実行中です。</translation>
     </message>
     <message>
-        <source>Cannot provide specific connections and have addrman find outgoing connections at the same.</source>
-        <translation>特定の接続が利用できず、またaddrmanは外向き接続を見つけられませんでした。</translation>
-    </message>
-    <message>
-        <source>Connect only to the specified node(s); -connect=0 disables automatic connections (the rules for this peer are the same as for -addnode)</source>
-        <translation>特定のノードにのみ接続します: -connect=0オプションで自動接続を無効化します(このノードに対する接続ルールは-addnodeオプションで指定されるものと同様です)。</translation>
-    </message>
-    <message>
         <source>Delete all wallet transactions and only recover those parts of the blockchain through -rescan on startup</source>
         <translation>ウォレットの全トランザクションを削除し、これらを-rescanオプションを用いることで起動時にブロックチェインのデータのみからリカバリします。</translation>
     </message>
     <message>
-        <source>Error reading %s! All keys read correctly, but transaction data or address book entries might be missing or incorrect.</source>
-        <translation>%s の読み込みエラー! すべてのキーは正しく読み取れますが、取引データやアドレス帳のエントリが失われたか、正しくない可能性があります。</translation>
+        <source>Error loading %s: You can&apos;t enable HD on a already existing non-HD wallet</source>
+        <translation>%s の読み込みエラー: 非HDウォレットが既に存在するため、HDウォレットを有効化できません</translation>
     </message>
     <message>
-        <source>Exclude debugging information for a category. Can be used in conjunction with -debug=1 to output debug logs for all categories except one or more specified categories.</source>
-        <translation>カテゴリに対してデバッグ情報を除外する。-debug=1 とともに用いることで、一つ以上の指定されたカテゴリを除くすべてのカテゴリのデバッグログを出力できる。</translation>
+        <source>Error reading %s! All keys read correctly, but transaction data or address book entries might be missing or incorrect.</source>
+        <translation>%s の読み込みエラー! すべてのキーは正しく読み取れますが、取引データやアドレス帳のエントリが失われたか、正しくない可能性があります。</translation>
     </message>
     <message>
         <source>Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)</source>
@@ -3236,10 +3621,6 @@
     <message>
         <source>Extra transactions to keep in memory for compact block reconstructions (default: %u)</source>
         <translation>コンパクトブロック再構成のために追加のトランザクションをメモリ内に保管しておく (デフォルト: %u)</translation>
-    </message>
-    <message>
-        <source>Flush wallet database activity from memory to disk log every &lt;n&gt; megabytes (default: %u)</source>
-        <translation>ウォレットデータベースのアクティビティを &lt;n&gt; メガバイトごとにメモリからディスクログに書き出す (デフォルト: %u)</translation>
     </message>
     <message>
         <source>If this block is in the chain assume that it and its ancestors are valid and potentially skip their script verification (0 to verify all, default: %s, testnet: %s)</source>
@@ -3254,16 +3635,12 @@
         <translation>ひとつのウォレットトランザクションまたは生トランザクションで使用する合計手数料の最大値 (%s 単位)。低すぎる値を指定すると巨大なトランザクションの作成ができなくなります (規定値: %s)</translation>
     </message>
     <message>
-        <source>Please check that your computer's date and time are correct! If your clock is wrong, %s will not work properly.</source>
+        <source>Please check that your computer&apos;s date and time are correct! If your clock is wrong, %s will not work properly.</source>
         <translation>あなたのPCの日付と時刻が正しいことを確認して下さい！ もしあなたの時計が正しくなければ %s が正確に動作しません。</translation>
     </message>
     <message>
         <source>Please contribute if you find %s useful. Visit %s for further information about the software.</source>
         <translation>%s が有用だと感じられた方はぜひプロジェクトへの貢献をお願いします。ソフトウェアのより詳細な情報については %s をご覧ください。</translation>
-    </message>
-    <message>
-        <source>Query for peer addresses via DNS lookup, if low on addresses (default: 1 unless -connect used)</source>
-        <translation>保有するピアアドレスが少ない場合、DNS ルックアップによりピアアドレスを問い合わせる (-connect を使っていない場合の初期値: 1)</translation>
     </message>
     <message>
         <source>Reduce storage requirements by enabling pruning (deleting) of old blocks. This allows the pruneblockchain RPC to be called to delete specific blocks, and enables automatic pruning of old blocks if a target size in MiB is provided. This mode is incompatible with -txindex and -rescan. Warning: Reverting this setting requires re-downloading the entire blockchain. (default: 0 = disable pruning blocks, 1 = allow manual pruning via RPC, &gt;%u = automatically prune block files to stay under the specified target size in MiB)</source>
@@ -3275,10 +3652,10 @@
     </message>
     <message>
         <source>Set the number of script verification threads (%u to %d, 0 = auto, &lt;0 = leave that many cores free, default: %d)</source>
-        <translation>スクリプト検証スレッド数を設定 (%uから%dの間, 0 = 自動, &lt;0 = 指定した数のコアを使わずに残す, 初期値: %d)</translation>
+        <translation>スクリプト検証スレッドを設定 (%uから%dの間, 0 = 自動, &lt;0 = たくさんのコアを自由にしておく, 初期値: %d)</translation>
     </message>
     <message>
-        <source>The block database contains a block which appears to be from the future. This may be due to your computer's date and time being set incorrectly. Only rebuild the block database if you are sure that your computer's date and time are correct</source>
+        <source>The block database contains a block which appears to be from the future. This may be due to your computer&apos;s date and time being set incorrectly. Only rebuild the block database if you are sure that your computer&apos;s date and time are correct</source>
         <translation>ブロックのデータベースに未来の時刻のブロックが含まれています。これはおそらくお使いのコンピュータに設定されている日時が間違っていることを示しています。お使いのコンピュータの日時が本当に正しい場合にのみ、ブロックのデータベースの再構築を行ってください。</translation>
     </message>
     <message>
@@ -3286,20 +3663,12 @@
         <translation>これはリリース前のテストビルドです - 各自の責任で利用すること - 採掘や商取引に使用しないでください</translation>
     </message>
     <message>
-        <source>This is the transaction fee you may discard if change is smaller than dust at this level</source>
-        <translation>これは、このレベルにおいてダストよりもおつりが小さい場合に捨てられるトランザクション手数料です。</translation>
-    </message>
-    <message>
-        <source>Unable to replay blocks. You will need to rebuild the database using -reindex-chainstate.</source>
-        <translation>ブロックのリプレイができませんでした。-reindex-chainstate を用いてデータベースを再構築する必要があります。</translation>
-    </message>
-    <message>
         <source>Unable to rewind the database to a pre-fork state. You will need to redownload the blockchain</source>
         <translation>データベースをフォーク前の状態に巻き戻せませんでした。ブロックチェーンを再ダウンロードする必要があります</translation>
     </message>
     <message>
         <source>Use UPnP to map the listening port (default: 1 when listening and no -proxy)</source>
-        <translation>リッスン ポートの割当に UPnP を使用 (初期値: リッスン中および-proxy が指定されていない場合は1)</translation>
+        <translation>リスン ポートの割当に UPnP を使用 (初期値: リスン中および-proxyが指定されていない場合は1)</translation>
     </message>
     <message>
         <source>Username and hashed password for JSON-RPC connections. The field &lt;userpw&gt; comes in the format: &lt;USERNAME&gt;:&lt;SALT&gt;$&lt;HASH&gt;. A canonical python script is included in share/rpcuser. The client then connects normally using the rpcuser=&lt;USERNAME&gt;/rpcpassword=&lt;PASSWORD&gt; pair of arguments. This option can be specified multiple times</source>
@@ -3318,28 +3687,12 @@
         <translation>警告: ピアと完全に合意が取れていないようです！このノードまたは他のノードのアップグレードが必要なようです。</translation>
     </message>
     <message>
-        <source>What type of addresses to use (&quot;legacy&quot;, &quot;p2sh-segwit&quot;, or &quot;bech32&quot;, default: &quot;%s&quot;)</source>
-        <translation>使用するアドレスの種類  (&quot;legacy&quot;, &quot;p2sh-segwit&quot;, または &quot;bech32&quot;, デフォルト: &quot;%s&quot;)</translation>
-    </message>
-    <message>
-        <source>What type of change to use (&quot;legacy&quot;, &quot;p2sh-segwit&quot;, or &quot;bech32&quot;). Default is same as -addresstype, except when -addresstype=p2sh-segwit a native segwit output is used when sending to a native segwit address)</source>
-        <translation>使用するおつりの種類  (&quot;legacy&quot;, &quot;p2sh-segwit&quot;, or &quot;bech32&quot;)。デフォルトは -addresstype と同じ、ただし -addresstype=p2sh-segwit の場合にnative segwitアドレス宛に送るときはnative segwitアウトプットが使われます</translation>
-    </message>
-    <message>
-        <source>Whether to save the mempool on shutdown and load on restart (default: %u)</source>
-        <translation>シャットダウン時に mempool を保存し、再起動時にロードするかどうか (初期値: %u)</translation>
-    </message>
-    <message>
-        <source>%d of last 100 blocks have unexpected version</source>
-        <translation>直近の100ブロックの内%dが予期しないバージョンを含んでいます</translation>
+        <source>You need to rebuild the database using -reindex-chainstate to change -txindex</source>
+        <translation>-txindex を変更するには -reindex-chainstate を使用してデータベースを再構築する必要があります</translation>
     </message>
     <message>
         <source>%s corrupt, salvage failed</source>
         <translation>%s が壊れています。復旧にも失敗しました</translation>
-    </message>
-    <message>
-        <source>%s is only allowed with a single wallet file</source>
-        <translation>%s は単一のウォレットファイルでのみ許可されます</translation>
     </message>
     <message>
         <source>-maxmempool must be at least %d MB</source>
@@ -3350,24 +3703,20 @@
         <translation>&lt;category&gt;は以下の値を指定できます：</translation>
     </message>
     <message>
-        <source>Accept connections from outside (default: 1 if no -proxy or -connect)</source>
-        <translation>外部からの接続を許可 (初期値:  -proxy または -connect を使用していない場合は1)</translation>
-    </message>
-    <message>
         <source>Append comment to the user agent string</source>
-        <translation>ユーザエージェント文字列にコメントを追加する</translation>
+        <translation>ユーザエージェント文字列にコメントを</translation>
     </message>
     <message>
         <source>Attempt to recover private keys from a corrupt wallet on startup</source>
-        <translation>起動時に壊れたウォレットから秘密鍵の復元を試みる</translation>
+        <translation>起動時に壊れたウォレットから秘密鍵を復旧することを試す</translation>
     </message>
     <message>
         <source>Block creation options:</source>
         <translation>ブロック作成オプション:</translation>
     </message>
     <message>
-        <source>Cannot resolve -%s address: '%s'</source>
-        <translation>-%s アドレス '%s' を解決できません</translation>
+        <source>Cannot resolve -%s address: &apos;%s&apos;</source>
+        <translation>-%s アドレス &apos;%s&apos; を解決できません</translation>
     </message>
     <message>
         <source>Chain selection options:</source>
@@ -3380,10 +3729,6 @@
     <message>
         <source>Connection options:</source>
         <translation>接続オプション：</translation>
-    </message>
-    <message>
-        <source>Copyright (C) %i</source>
-        <translation>Copyright (C) %i</translation>
     </message>
     <message>
         <source>Copyright (C) %i-%i</source>
@@ -3427,10 +3772,6 @@
         <translation>メモリプール内のトランザクションの置換を有効化する (デフォルト: %u)</translation>
     </message>
     <message>
-        <source>Error creating %s: You can't create non-HD wallets with this version.</source>
-        <translation>%sの作成に失敗しました。このバージョンではHDウォレット以外を作成することはできません。</translation>
-    </message>
-    <message>
         <source>Error initializing block database</source>
         <translation>ブロック データベースの初期化中にエラー</translation>
     </message>
@@ -3451,6 +3792,10 @@
         <translation>%s の読み込みに失敗しました: ウォレットの読み込みにはより新しいバージョンの %s が必要です</translation>
     </message>
     <message>
+        <source>Error loading %s: You can&apos;t disable HD on a already existing HD wallet</source>
+        <translation>%s の読み込みエラー: HDウォレットが既に存在するため、HDウォレットを無効化できません</translation>
+    </message>
+    <message>
         <source>Error loading block database</source>
         <translation>ブロック データベースの読み込みエラー</translation>
     </message>
@@ -3464,11 +3809,7 @@
     </message>
     <message>
         <source>Failed to listen on any port. Use -listen=0 if you want this.</source>
-        <translation>ポートのリッスンに失敗しました。必要であれば -listen=0 を使用してください。</translation>
-    </message>
-    <message>
-        <source>Failed to rescan the wallet during initialization</source>
-        <translation>初期化の途中でウォレットの再スキャンに失敗しました</translation>
+        <translation>ポートのリスンに失敗しました。必要であれば -listen=0 を使用してください。</translation>
     </message>
     <message>
         <source>Importing...</source>
@@ -3483,24 +3824,20 @@
         <translation>初期化時の健全性チェックに失敗しました。%s を終了します。</translation>
     </message>
     <message>
-        <source>Invalid amount for -%s=&lt;amount&gt;: '%s'</source>
-        <translation>-%s=&lt;数量&gt; に対する不正な額: '%s'</translation>
+        <source>Invalid -onion address: &apos;%s&apos;</source>
+        <translation>無効な -onion アドレス：&apos;%s&apos;</translation>
     </message>
     <message>
-        <source>Invalid amount for -discardfee=&lt;amount&gt;: '%s'</source>
-        <translation>-discardfee=&lt;amount&gt; に対する不正な数量: '%s'</translation>
+        <source>Invalid amount for -%s=&lt;amount&gt;: &apos;%s&apos;</source>
+        <translation>-%s=&lt;数量&gt; に対する不正な額: &apos;%s&apos;</translation>
     </message>
     <message>
-        <source>Invalid amount for -fallbackfee=&lt;amount&gt;: '%s'</source>
-        <translation>不正な額 -fallbackfee=&lt;amount&gt;: '%s'</translation>
+        <source>Invalid amount for -fallbackfee=&lt;amount&gt;: &apos;%s&apos;</source>
+        <translation>不正な額 -fallbackfee=&lt;amount&gt;: &apos;%s&apos;</translation>
     </message>
     <message>
         <source>Keep the transaction memory pool below &lt;n&gt; megabytes (default: %u)</source>
         <translation>トランザクションのメモリ・プールの総量を &lt;n&gt; メガバイト以下に維持する (初期値: %u)</translation>
-    </message>
-    <message>
-        <source>Loading P2P addresses...</source>
-        <translation>P2Pアドレスを読み込んでいます...</translation>
     </message>
     <message>
         <source>Loading banlist...</source>
@@ -3508,7 +3845,7 @@
     </message>
     <message>
         <source>Location of the auth cookie (default: data dir)</source>
-        <translation>認証クッキーの場所 (デフォルト: データディレクトリ)</translation>
+        <translation>認証クッキーの場所 (デフォルト: )</translation>
     </message>
     <message>
         <source>Not enough file descriptors available.</source>
@@ -3543,52 +3880,28 @@
         <translation>既にインデックスされたブロックからチェイン状態を再構築する</translation>
     </message>
     <message>
-        <source>Replaying blocks...</source>
-        <translation>ブロックをリプレイしています...</translation>
-    </message>
-    <message>
         <source>Rewinding blocks...</source>
         <translation>ブロックを巻き戻しています...</translation>
-    </message>
-    <message>
-        <source>Run a thread to flush wallet periodically (default: %u)</source>
-        <translation>ウォレットの変更を書き出すスレッドを定期的に実行する (default: %u)</translation>
-    </message>
-    <message>
-        <source>Send transactions with full-RBF opt-in enabled (RPC only, default: %u)</source>
-        <translation>手数料上乗せ(RBF)がオプトイン形式で有効化されているときRBFを利用してトランザクションを送信する (RPCコマンドのみ。初期値: %u)</translation>
     </message>
     <message>
         <source>Set database cache size in megabytes (%d to %d, default: %d)</source>
         <translation>データベースのキャッシュサイズをメガバイトで設定 (%dから%d。初期値: %d)</translation>
     </message>
     <message>
-        <source>Sets the DB_PRIVATE flag in the wallet db environment (default: %u)</source>
-        <translation>ウォレットdb環境でDB_PRIVATEフラグを設定する (デフォルト: %u)</translation>
+        <source>Set maximum block size in bytes (default: %d)</source>
+        <translation>最大ブロックサイズをバイトで設定 (初期値: %d)</translation>
     </message>
     <message>
         <source>Specify wallet file (within data directory)</source>
-        <translation>ウォレットのファイルを指定 (データディレクトリ内)</translation>
+        <translation>ウォレットのファイルを指定&#x3000;(データ・ディレクトリの中に)</translation>
     </message>
     <message>
         <source>The source code is available from %s.</source>
         <translation>ソースコードは %s より入手可能です。</translation>
     </message>
     <message>
-        <source>Transaction fee and change calculation failed</source>
-        <translation>トランザクション手数料およびおつりの計算に失敗しました</translation>
-    </message>
-    <message>
         <source>Unable to bind to %s on this computer. %s is probably already running.</source>
         <translation>このコンピュータの %s にバインドすることができません。おそらく %s は既に実行されています。</translation>
-    </message>
-    <message>
-        <source>Unknown address type &apos;%s&apos;</source>
-        <translation>未知のアドレス種別 &apos;%s&apos;</translation>
-    </message>
-    <message>
-        <source>Unknown change type &apos;%s&apos;</source>
-        <translation>未知のおつり種別 &apos;%s&apos;</translation>
     </message>
     <message>
         <source>Unsupported argument -benchmark ignored, use -debug=bench.</source>
@@ -3601,14 +3914,6 @@
     <message>
         <source>Unsupported argument -tor found, use -onion.</source>
         <translation>サポートされていない引数 -tor が見つかりました。-onion を使用してください。</translation>
-    </message>
-    <message>
-        <source>Unsupported logging category %s=%s.</source>
-        <translation>サポートされていないログカテゴリ %s=%s.</translation>
-    </message>
-    <message>
-        <source>Upgrading UTXO database</source>
-        <translation>UTXOデータベースを更新しています</translation>
     </message>
     <message>
         <source>Use UPnP to map the listening port (default: %u)</source>
@@ -3625,6 +3930,14 @@
     <message>
         <source>Verifying blocks...</source>
         <translation>ブロックの検証中...</translation>
+    </message>
+    <message>
+        <source>Verifying wallet...</source>
+        <translation>ウォレットの検証中...</translation>
+    </message>
+    <message>
+        <source>Wallet %s resides outside data directory %s</source>
+        <translation>財布 %s はデータ・ディレクトリ%sの外にあります</translation>
     </message>
     <message>
         <source>Wallet debugging/testing options:</source>
@@ -3647,6 +3960,10 @@
         <translation>指定されたアドレスおよび、そこに接続を行ってきたホワイトリストのピアに対してバインドを行います。IPv6の場合には [host]:port 表記を使用してください</translation>
     </message>
     <message>
+        <source>Bind to given address to listen for JSON-RPC connections. Use [host]:port notation for IPv6. This option can be specified multiple times (default: bind to all interfaces)</source>
+        <translation>指定されたアドレスに対して JSON-RPC 接続をリッスンしするようバインドします。IPv6の場合には [host]:port 表記を使用してください。このオプションは複数回指定することが可能です (初期値: すべてのインターフェースに対してバインドする)</translation>
+    </message>
+    <message>
         <source>Create new files with system default permissions, instead of umask 077 (only effective with disabled wallet functionality)</source>
         <translation>umask 077 ではなく、システムのデフォルトパーミッションで新規ファイルを作成する (ウォレット機能が無効化されていた場合にのみ有効)</translation>
     </message>
@@ -3660,7 +3977,7 @@
     </message>
     <message>
         <source>Execute command when a relevant alert is received or we see a really long fork (%s in cmd is replaced by message)</source>
-        <translation>関連するアラートを受け取った、またはとても長いフォークがあった際にコマンドを実行 (cmd の %s はメッセージに置換される)</translation>
+        <translation type="vanished">関連のアラートをもらってもすごく長いのフォークを見てもコマンドを実行 (コマンドの中にあるの%sはメッセージから置き換えさせる)</translation>
     </message>
     <message>
         <source>Fees (in %s/kB) smaller than this are considered zero fee for relaying, mining and transaction creation (default: %s)</source>
@@ -3671,8 +3988,8 @@
         <translation>paytxfee が設定されていなかった場合、平均して n ブロック以内にトランザクションが検証され始めるのに十分な手数料を含める (初期値: %u)</translation>
     </message>
     <message>
-        <source>Invalid amount for -maxtxfee=&lt;amount&gt;: '%s' (must be at least the minrelay fee of %s to prevent stuck transactions)</source>
-        <translation>-maxtxfee=&lt;amount&gt; の数量の指定が不正です: '%s' (トランザクションが詰まってしまうのを防ぐため、少なくとも %s の最小中継手数料を指定しなければいけません)</translation>
+        <source>Invalid amount for -maxtxfee=&lt;amount&gt;: &apos;%s&apos; (must be at least the minrelay fee of %s to prevent stuck transactions)</source>
+        <translation>-maxtxfee=&lt;amount&gt; の数量の指定が不正です: &apos;%s&apos; (トランザクションが詰まってしまうのを防ぐため、少なくとも %s の最小中継手数料を指定しなければいけません)</translation>
     </message>
     <message>
         <source>Maximum size of data in data carrier transactions we relay and mine (default: %u)</source>
@@ -3683,8 +4000,16 @@
         <translation>認証情報をプロキシー接続ごとにランダム化する。これによりTorストリーム分離をすることができます (規定値: %u)</translation>
     </message>
     <message>
+        <source>Set maximum size of high-priority/low-fee transactions in bytes (default: %d)</source>
+        <translation>最優先/最低手数料の最大サイズをバイトで指定 (初期値: %d)</translation>
+    </message>
+    <message>
         <source>The transaction amount is too small to send after the fee has been deducted</source>
         <translation>手数料差引後のトランザクションの金額が小さすぎるため、送金できません。</translation>
+    </message>
+    <message>
+        <source>Use hierarchical deterministic key generation (HD) after BIP32. Only has effect during wallet creation/first start</source>
+        <translation>BIP32 に従った階層的決定性鍵生成方式 (HD) を利用します。ウォレットの生成時ないし最初に起動した時にのみ有効です。</translation>
     </message>
     <message>
         <source>Whitelisted peers cannot be DoS banned and their transactions are always relayed, even if they are already in the mempool, useful e.g. for a gateway</source>
@@ -3711,16 +4036,8 @@
         <translation>SOCKS5 プロキシ経由で接続する</translation>
     </message>
     <message>
-        <source>Error loading %s: You can't disable HD on an already existing HD wallet</source>
-        <translation>%s の読み込みエラー: HDウォレットが既に存在するため、HDウォレットを無効化できません</translation>
-    </message>
-    <message>
         <source>Error reading from database, shutting down.</source>
         <translation>データベースの読み込みエラー。シャットダウンします。</translation>
-    </message>
-    <message>
-        <source>Error upgrading chainstate database</source>
-        <translation>チェインステートデータベースの更新エラー</translation>
     </message>
     <message>
         <source>Imports blocks from external blk000??.dat file on startup</source>
@@ -3731,28 +4048,20 @@
         <translation>情報</translation>
     </message>
     <message>
-        <source>Invalid -onion address or hostname: '%s'</source>
-        <translation>無効な -onion アドレスまたはホスト名: '%s'</translation>
+        <source>Invalid amount for -paytxfee=&lt;amount&gt;: &apos;%s&apos; (must be at least %s)</source>
+        <translation>-paytxfee=&lt;amount&gt; に対する無効な数量です: &apos;%s&apos; (少なくとも %s でなければいけません)</translation>
     </message>
     <message>
-        <source>Invalid -proxy address or hostname: '%s'</source>
-        <translation>無効な -proxy アドレスまたはホスト名: '%s'</translation>
-    </message>
-    <message>
-        <source>Invalid amount for -paytxfee=&lt;amount&gt;: '%s' (must be at least %s)</source>
-        <translation>-paytxfee=&lt;amount&gt; に対する無効な数量です: '%s' (少なくとも %s でなければいけません)</translation>
-    </message>
-    <message>
-        <source>Invalid netmask specified in -whitelist: '%s'</source>
-        <translation>-whitelist に対する無効なネットマスクです: '%s'</translation>
+        <source>Invalid netmask specified in -whitelist: &apos;%s&apos;</source>
+        <translation>-whitelist に対する無効なネットマスクです: &apos;%s&apos;</translation>
     </message>
     <message>
         <source>Keep at most &lt;n&gt; unconnectable transactions in memory (default: %u)</source>
         <translation>最大で &lt;n&gt; 個の孤立したトランザクションをメモリの中に保持する (初期値: %u)</translation>
     </message>
     <message>
-        <source>Need to specify a port with -whitebind: '%s'</source>
-        <translation>-whitebind を用いてポートを指定する必要があります: '%s'</translation>
+        <source>Need to specify a port with -whitebind: &apos;%s&apos;</source>
+        <translation>-whitebind を用いてポートを指定する必要があります: &apos;%s&apos;</translation>
     </message>
     <message>
         <source>Node relay options:</source>
@@ -3775,6 +4084,10 @@
         <translation>トレース/デバッグ情報を debug.log ファイルの代わりにコンソールへ送る</translation>
     </message>
     <message>
+        <source>Send transactions as zero-fee transactions if possible (default: %u)</source>
+        <translation>可能な場合には手数料ゼロのトランザクションとしてトランザクションを送信する (初期値: %u)</translation>
+    </message>
+    <message>
         <source>Show all debugging options (usage: --help -help-debug)</source>
         <translation>すべてのデバッグオプションを表示する (使い方: --help -help-debug)</translation>
     </message>
@@ -3785,18 +4098,6 @@
     <message>
         <source>Signing transaction failed</source>
         <translation>取引の署名に失敗しました</translation>
-    </message>
-    <message>
-        <source>Specified -walletdir "%s" does not exist</source>
-        <translation>指定された -walletdir "%s" は存在しません</translation>
-    </message>
-    <message>
-        <source>Specified -walletdir "%s" is a relative path</source>
-        <translation>指定された -walletdir "%s" は相対パスです</translation>
-    </message>
-    <message>
-        <source>Specified -walletdir "%s" is not a directory</source>
-        <translation>指定された-walletdir "%s" はディレクトリではありません</translation>
     </message>
     <message>
         <source>The transaction amount is too small to pay the fee</source>
@@ -3831,24 +4132,12 @@
         <translation>このコンピュータの %s にバインドすることができません (バインドが返したエラーは %s)</translation>
     </message>
     <message>
-        <source>Unable to generate initial keys</source>
-        <translation>初期化キーを生成できません</translation>
-    </message>
-    <message>
         <source>Upgrade wallet to latest format on startup</source>
         <translation>起動時にウォレットを最新のフォーマットにアップグレード</translation>
     </message>
     <message>
         <source>Username for JSON-RPC connections</source>
         <translation>JSON-RPC 接続のユーザー名</translation>
-    </message>
-    <message>
-        <source>Verifying wallet(s)...</source>
-        <translation>ウォレットの確認中...</translation>
-    </message>
-    <message>
-        <source>Wallet %s resides outside wallet directory %s</source>
-        <translation>ウォレット「%s」がウォレットフォルダ「%s」の外に存在します</translation>
     </message>
     <message>
         <source>Warning</source>
@@ -3863,10 +4152,6 @@
         <translation>ブロック限定モードにおいて動作を行うかどうか (初期値: %u)</translation>
     </message>
     <message>
-        <source>You need to rebuild the database using -reindex to change -txindex</source>
-        <translation>-txindex を変更するには -reindex を使用してデータベースを再構築する必要があります</translation>
-    </message>
-    <message>
         <source>Zapping all transactions from wallet...</source>
         <translation>ウォレットからすべてのトランザクションを消去しています...</translation>
     </message>
@@ -3879,12 +4164,12 @@
         <translation>JSON-RPC 接続のパスワード</translation>
     </message>
     <message>
-        <source>Execute command when the best block changes (%s in cmd is replaced by block hash)</source>
-        <translation>最良のブロックが変わった際にコマンドを実行 (cmd の %s はブロック ハッシュに置換される)</translation>
-    </message>
-    <message>
         <source>Allow DNS lookups for -addnode, -seednode and -connect</source>
         <translation>-addnode, -seednode と -connect で DNS ルックアップを許可する</translation>
+    </message>
+    <message>
+        <source>Loading addresses...</source>
+        <translation>アドレスを読み込んでいます...</translation>
     </message>
     <message>
         <source>(1 = keep tx meta data e.g. account owner and payment request information, 2 = drop tx meta data)</source>
@@ -3895,24 +4180,12 @@
         <translation>-maxtxfee が非常に高く設定されています！ひとつのトランザクションでこの量の手数料が支払われてしまうことがあります。</translation>
     </message>
     <message>
-        <source>Bind to given address to listen for JSON-RPC connections. This option is ignored unless -rpcallowip is also passed. Port is optional and overrides -rpcport. Use [host]:port notation for IPv6. This option can be specified multiple times (default: 127.0.0.1 and ::1 i.e., localhost, or if -rpcallowip has been specified, 0.0.0.0 and :: i.e., all addresses)</source>
-        <translation>指定されたアドレスに対して JSON-RPC 接続をリッスンしするようバインドします。このオプションは -rpcallowip も指定されている場合以外には無視されます。ポートはオプションであり -rpcport をオーバーライドします。IPv6の場合には [host]:port 表記を使用してください。このオプションは複数回指定することが可能です (初期値: 127.0.0.1 および ::1、すなわち localhost または -rpcallowip が指定されている場合には 0.0.0.0 および ::、すなわちすべてのアドレス)</translation>
-    </message>
-    <message>
         <source>Do not keep transactions in the mempool longer than &lt;n&gt; hours (default: %u)</source>
         <translation>mempool内でトランザクションを &lt;n&gt; 時間以上保持しない (初期値: %u)</translation>
     </message>
     <message>
         <source>Equivalent bytes per sigop in transactions for relay and mining (default: %u)</source>
         <translation>中継や採掘を行う際のトランザクション内の、sigopあたりバイト数の相当量 (初期値: %u)</translation>
-    </message>
-    <message>
-        <source>Error loading %s: You can't enable HD on an already existing non-HD wallet</source>
-        <translation>%s の読み込みエラー: 非HDウォレットが既に存在するため、HDウォレットを有効化できません</translation>
-    </message>
-    <message>
-        <source>Error loading wallet %s. -wallet parameter must only specify a filename (not a path).</source>
-        <translation>ウォレット %s の読み込みエラー。-wallet パラメータはファイル名だけを指定してください (パス名ではありません)。</translation>
     </message>
     <message>
         <source>Fees (in %s/kB) smaller than this are considered zero fee for transaction creation (default: %s)</source>
@@ -3939,32 +4212,20 @@
         <translation>デバッグ情報を出力する (初期値: %u, &lt;category&gt; の指定は任意です)</translation>
     </message>
     <message>
+        <source>Query for peer addresses via DNS lookup, if low on addresses (default: 1 unless -connect/-noconnect)</source>
+        <translation>保有するピアアドレスが少ない場合、DNS ルックアップによりピアアドレスを問い合わせる (-connect/-noconnect を使っていない場合の初期値: 1)</translation>
+    </message>
+    <message>
         <source>Sets the serialization of raw transaction or block hex returned in non-verbose mode, non-segwit(0) or segwit(1) (default: %d)</source>
         <translation>非冗長モードで返却する生トランザクションやブロックの16進数表現のシリアライゼーションフォーマットを非 segwit (0) または segwit (1) のものに設定する (デフォルト: %d)</translation>
-    </message>
-    <message>
-        <source>Specify directory to hold wallets (default: &lt;datadir&gt;/wallets if it exists, otherwise &lt;datadir&gt;)</source>
-        <translation>ウォレットを保持するディレクトリの指定 (初期値: 存在する場合 &lt;datadir&gt;/wallets、その他の場合 &lt;datadir&gt;)</translation>
-    </message>
-    <message>
-        <source>Specify location of debug log file: this can be an absolute path or a path relative to the data directory (default: %s)</source>
-        <translation>デバッグログファイルの位置の指定: 絶対パスまたはデータディレクトリからの相対パス (初期値: %s)</translation>
     </message>
     <message>
         <source>Support filtering of blocks and transaction with bloom filters (default: %u)</source>
         <translation>Bloomフィルタによる、ブロックおよびトランザクションのフィルタリングを有効化する (初期値: %u)</translation>
     </message>
     <message>
-        <source>The fee rate (in %s/kB) that indicates your tolerance for discarding change by adding it to the fee (default: %s). Note: An output is discarded if it is dust at this rate, but we will always discard up to the dust relay fee and a discard fee above that is limited by the fee estimate for the longest target</source>
-        <translation>おつりを捨てて手数料 (初期値: %s) に追加する場合に許容される手数料レート (%s/kB 単位)。注記: このレートで出力がダストだった場合には出力は捨てられますが、最も長いターゲットの手数料見積額で制限される、ダスト中継手数料および上記の放棄手数料までは常に捨てられます。</translation>
-    </message>
-    <message>
         <source>This is the transaction fee you may pay when fee estimates are not available.</source>
         <translation>これは手数料の推定機能が利用できない場合に支払うトランザクション手数料です。</translation>
-    </message>
-    <message>
-        <source>This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit %s and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard.</source>
-        <translation>この製品はOpenSSLプロジェクトにより開発されたソフトウェアをOpenSSLツールキット %s として利用しています &lt;https://www.openssl.org/&gt;。また、Eric Young氏により開発された暗号ソフトウェア、Thomas Bernard氏により書かれたUPnPソフトウェアを用いています。</translation>
     </message>
     <message>
         <source>Total length of network version string (%i) exceeds maximum length (%i). Reduce the number or size of uacomments.</source>
@@ -3975,7 +4236,7 @@
         <translation>送信転送量を与えられた目標値以下に維持するようにする (24時間あたり何MiBかで指定)。0 の場合は無制限 (初期値: %d)</translation>
     </message>
     <message>
-        <source>Unsupported argument -socks found. Setting SOCKS version isn't possible anymore, only SOCKS5 proxies are supported.</source>
+        <source>Unsupported argument -socks found. Setting SOCKS version isn&apos;t possible anymore, only SOCKS5 proxies are supported.</source>
         <translation>サポートされていない引数 -socks が見つかりました。SOCKSバージョンの設定はできないようになりました。SOCKS5プロキシのみがサポートされています。</translation>
     </message>
     <message>
@@ -3987,7 +4248,7 @@
         <translation>Tor 秘匿サービスを通し、別々の SOCKS5 プロキシを用いることでピアに到達する (初期値: %s)</translation>
     </message>
     <message>
-        <source>Warning: Unknown block versions being mined! It's possible unknown rules are in effect</source>
+        <source>Warning: Unknown block versions being mined! It&apos;s possible unknown rules are in effect</source>
         <translation>警告: 未知のバージョンのブロックが採掘されました。未知のルールが導入された可能性があります</translation>
     </message>
     <message>
@@ -3996,7 +4257,7 @@
     </message>
     <message>
         <source>Whitelist peers connecting from the given IP address (e.g. 1.2.3.4) or CIDR notated network (e.g. 1.2.3.0/24). Can be specified multiple times.</source>
-        <translation>ホワイトリストとして登録するピアの、接続元の IP アドレス (例: 1.2.3.4) または CIDR 表現のネットワーク (例: 1.2.3.0/24)。複数回指定することもできる。</translation>
+        <translation>ホワイトリストとして登録するピアノ、接続元の IP アドレス (例: 1.2.3.4) または CIDR 表現のネットワーク (例: 1.2.3.0/24)。複数回指定することもできる</translation>
     </message>
     <message>
         <source>%s is set very high!</source>
@@ -4011,18 +4272,6 @@
         <translation>DNS ルックアップを通してピアアドレスを常に問い合わせる (初期値: %u)</translation>
     </message>
     <message>
-        <source>Error loading wallet %s. -wallet filename must be a regular file.</source>
-        <translation>ウォレット %s の読み込みエラー。-wallet のファイル名は通常のファイルでなければいけません。</translation>
-    </message>
-    <message>
-        <source>Error loading wallet %s. Duplicate -wallet filename specified.</source>
-        <translation>ウォレット %s の読み込みエラー。重複する -wallet ファイル名が指定されました。</translation>
-    </message>
-    <message>
-        <source>Error loading wallet %s. Invalid characters in -wallet filename.</source>
-        <translation>ウォレット %s の読み込みエラー。-walletファイル名内に無効な文字が含まれています。</translation>
-    </message>
-    <message>
         <source>How many blocks to check at startup (default: %u, 0 = all)</source>
         <translation>起動時に点検するブロック数 (初期値: %u, 0=すべて)</translation>
     </message>
@@ -4031,12 +4280,16 @@
         <translation>デバッグ出力にIPアドレスを含める (初期値: %u)</translation>
     </message>
     <message>
+        <source>Invalid -proxy address: &apos;%s&apos;</source>
+        <translation>無効な -proxy アドレス: &apos;%s&apos;</translation>
+    </message>
+    <message>
         <source>Keypool ran out, please call keypoolrefill first</source>
         <translation>鍵プールが枯渇しました。まずはじめに keypoolrefill を呼び出してください</translation>
     </message>
     <message>
         <source>Listen for JSON-RPC connections on &lt;port&gt; (default: %u or testnet: %u)</source>
-        <translation>&lt;port&gt; で JSON-RPC 接続をリッスン (初期値: %u、testnet は %u)</translation>
+        <translation>&lt;port&gt; で JSON-RPC 接続をリスン (初期値: %u、testnet は %u)</translation>
     </message>
     <message>
         <source>Listen for connections on &lt;port&gt; (default: %u or testnet: %u)</source>
@@ -4069,6 +4322,10 @@
     <message>
         <source>Relay non-P2SH multisig (default: %u)</source>
         <translation>P2SHでないマルチシグトランザクションをリレーする (初期値: %u)</translation>
+    </message>
+    <message>
+        <source>Send transactions with full-RBF opt-in enabled (default: %u)</source>
+        <translation>full-RBF opt-in を利用してトランザクションを送信する (初期値: %u)</translation>
     </message>
     <message>
         <source>Set key pool size to &lt;n&gt; (default: %u)</source>
@@ -4131,8 +4388,8 @@
         <translation>トランザクションは最低ひとつの受取先が必要です</translation>
     </message>
     <message>
-        <source>Unknown network specified in -onlynet: '%s'</source>
-        <translation>-onlynet で指定された '%s' は未知のネットワークです</translation>
+        <source>Unknown network specified in -onlynet: &apos;%s&apos;</source>
+        <translation>-onlynet で指定された &apos;%s&apos; は未知のネットワークです</translation>
     </message>
     <message>
         <source>Insufficient funds</source>
@@ -4143,12 +4400,20 @@
         <translation>ブロック インデックスを読み込んでいます...</translation>
     </message>
     <message>
+        <source>Add a node to connect to and attempt to keep the connection open</source>
+        <translation>接続するノードを追加し接続を保持します</translation>
+    </message>
+    <message>
         <source>Loading wallet...</source>
         <translation>ウォレットを読み込んでいます...</translation>
     </message>
     <message>
         <source>Cannot downgrade wallet</source>
         <translation>ウォレットのダウングレードはできません</translation>
+    </message>
+    <message>
+        <source>Cannot write default address</source>
+        <translation>初期値のアドレスを書き込むことができません</translation>
     </message>
     <message>
         <source>Rescanning...</source>
@@ -4161,6 +4426,78 @@
     <message>
         <source>Error</source>
         <translation>エラー</translation>
+    </message>
+    <message>
+        <source>Bitcoin Core and Minersworldcoin Core</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Amount under which a transaction output is considered dust, in %s (default: %s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Execute command when the best block changes (%s in cmd is replaced by block hash, %i is replaced by block number)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit %s and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard. Paper wallet art provided by Anacoluthia.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>High</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Very High</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Minimum</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Low</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Maximum</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Overview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>-discardthreshold is set very high! This is the output amount that the wallet will discard (to fee) if it is smaller than this setting.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Amount under which a transaction output is considered non-standard and will not be accepted or relayed, in %s (default: %s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Invalid amount for -discardthreshold=&lt;amount&gt;: &apos;%s&apos; (must be at least the dust limit of %s to prevent stuck transactions)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The minimum transaction output size (in %s) used to validate wallet transactions and discard change (to fee) (default: %s)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use Namecoin-compatible AuxPow API structure, (default: %u)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Execute command when we see a really long fork (%s in cmd is replaced by message)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Specify directory where to write backups and data dumps (default datadir/backups)</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>

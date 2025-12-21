@@ -130,8 +130,8 @@
         <translation>Kõvakettal olevate plokkide reindekseerimine...</translation>
     </message>
     <message>
-        <source>Bitcoin</source>
-        <translation>MinersWorldCoin</translation>
+        <source>Minersworldcoin</source>
+        <translation>Minersworldcoin</translation>
     </message>
     <message>
         <source>Wallet</source>
@@ -273,10 +273,6 @@
         <translation>Tere tulemast</translation>
     </message>
     <message>
-        <source>Bitcoin</source>
-        <translation>MinersWorldCoin</translation>
-    </message>
-    <message>
         <source>Error</source>
         <translation>Viga</translation>
     </message>
@@ -317,10 +313,6 @@
         <source>&amp;OK</source>
         <translation>&amp;OK</translation>
     </message>
-    <message>
-        <source>Error</source>
-        <translation>Viga</translation>
-    </message>
     </context>
 <context>
     <name>OverviewPage</name>
@@ -342,15 +334,7 @@
     </context>
 <context>
     <name>PeerTableModel</name>
-    <message>
-        <source>Sent</source>
-        <translation>Saadetud</translation>
-    </message>
-    <message>
-        <source>Received</source>
-        <translation>Vastu võetud</translation>
-    </message>
-</context>
+    </context>
 <context>
     <name>QObject</name>
     <message>
@@ -537,6 +521,14 @@
     <message>
         <source>Choose...</source>
         <translation>Vali...</translation>
+    </message>
+    <message>
+        <source>normal</source>
+        <translation>normaalne</translation>
+    </message>
+    <message>
+        <source>fast</source>
+        <translation>kiire</translation>
     </message>
     <message>
         <source>Copy amount</source>
@@ -768,8 +760,8 @@
         <translation>Valikud:</translation>
     </message>
     <message>
-        <source>Bitcoin Core</source>
-        <translation>MinersWorldCoin Core</translation>
+        <source>Minersworldcoin Core</source>
+        <translation>Minersworldcoin Core</translation>
     </message>
     <message>
         <source>Information</source>
