@@ -85,6 +85,10 @@ Copyright: Stephan Hutching, Jonas Schnelli
 License: Expat
 Comment: Modifications of Stephan Hutchings Typicons
 
+Files: src/qt/res/fonts/RobotoMono-Bold.ttf
+License: Apache-2.0
+Comment: Site: https://fonts.google.com/specimen/Roboto+Mono
+
 Files: src/qt/res/icons/about.png
        src/qt/res/icons/bitcoin.*
        share/pixmaps/bitcoin*
