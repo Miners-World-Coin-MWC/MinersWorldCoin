@@ -1,0 +1,20 @@
+diff -dur a/crypto/getenv.c b/crypto/getenv.c
+--- a/crypto/getenv.c	2019-12-20 13:02:41.000000000 +0000
++++ b/crypto/getenv.c	2021-09-20 03:02:04.125747397 +0000
+@@ -16,16 +16,7 @@
+
+ char *ossl_safe_getenv(const char *name)
+ {
+-#if defined(__GLIBC__) && defined(__GLIBC_PREREQ)
+-# if __GLIBC_PREREQ(2, 17)
+-#  define SECURE_GETENV
+-    return secure_getenv(name);
+-# endif
+-#endif
+-
+-#ifndef SECURE_GETENV
+     if (OPENSSL_issetugid())
+         return NULL;
+     return getenv(name);
+-#endif
+ }
