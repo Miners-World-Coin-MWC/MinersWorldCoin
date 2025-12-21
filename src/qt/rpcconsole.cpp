@@ -7,6 +7,8 @@
 #endif
 
 #include <qt/rpcconsole.h>
+
+#include <qt/peerdialog.h>
 #include <qt/forms/ui_debugwindow.h>
 
 #include <qt/bantablemodel.h>
@@ -477,6 +479,15 @@ RPCConsole::RPCConsole(const PlatformStyle *_platformStyle, QWidget *parent) :
     connect(ui->fontSmallerButton, SIGNAL(clicked()), this, SLOT(fontSmaller()));
     connect(ui->btnClearTrafficGraph, SIGNAL(clicked()), ui->trafficGraph, SLOT(clear()));
 
+    // Allow user to add new peer
+    connect(ui->peerAdd, SIGNAL(clicked()), this, SLOT(on_addPeerClicked()));
+
+    // Allow user to remove peer
+    connect(ui->peerRemove, SIGNAL(clicked()), this, SLOT(on_removePeerClicked()));
+
+    // Allow user to test peer
+    connect(ui->peerTest, SIGNAL(clicked()), this, SLOT(on_testPeerClicked()));
+
     // set library version labels
 #ifdef ENABLE_WALLET
     ui->berkeleyDBVersion->setText(DbEnv::version(0, 0, 0));
@@ -946,6 +957,54 @@ void RPCConsole::on_tabWidget_currentChanged(int index)
 void RPCConsole::on_openDebugLogfileButton_clicked()
 {
     GUIUtil::openDebugLogfile();
+}
+
+void RPCConsole::on_addPeerClicked() 
+{
+
+    QWidget *win = new AddPeerDialog(0);
+
+    win->showNormal();
+    win->show();
+    win->raise();
+    win->activateWindow();
+
+    /** Center window */
+    const QPoint global = ui->tabWidget->mapToGlobal(ui->tabWidget->rect().center());
+    win->move(global.x() - win->width() / 2, global.y() - win->height() / 2);
+}
+
+void RPCConsole::on_removePeerClicked() 
+{    
+    QList<QModelIndex> ips = GUIUtil::getEntryData(ui->peerWidget, PeerTableModel::Address);
+
+    if(ips.size() != 0)
+    {
+        QString address = ips[0].data().toString();
+
+        if(QMessageBox::Yes == QMessageBox::question(this, tr("Remove Peer"), tr("Are you sure you want to remove the peer: ") + address + "?", QMessageBox::Yes | QMessageBox::No))
+        {
+            QMessageBox::information(this, tr("Remove Peer"), PeerTools::ManagePeer("remove", address), QMessageBox::Ok, QMessageBox::Ok);
+        }
+
+    } else 
+    {
+        QMessageBox::information(this, tr("Remove Peer"), tr("No peer was selected."), QMessageBox::Ok, QMessageBox::Ok);
+    }
+}
+
+void RPCConsole::on_testPeerClicked() 
+{
+    QWidget *win = new TestPeerDialog(0);
+
+    win->showNormal();
+    win->show();
+    win->raise();
+    win->activateWindow();
+
+    /** Center window */
+    const QPoint global = ui->tabWidget->mapToGlobal(ui->tabWidget->rect().center());
+    win->move(global.x() - win->width() / 2, global.y() - win->height() / 2);
 }
 
 void RPCConsole::scrollToEnd()
