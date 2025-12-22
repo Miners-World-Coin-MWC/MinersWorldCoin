@@ -353,7 +353,8 @@ BITCOIN_QT_BASE_CPP = \
   qt/splashscreen.cpp \
   qt/trafficgraphwidget.cpp \
   qt/utilitydialog.cpp \
-  qt/peerdialog.cpp \
+  qt/peerdialog.cpp 
+
 
 BITCOIN_QT_WINDOWS_CPP = qt/winshutdownmonitor.cpp
 
