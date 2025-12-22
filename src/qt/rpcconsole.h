@@ -67,6 +67,12 @@ private Q_SLOTS:
     void on_tabWidget_currentChanged(int index);
     /** open the debug.log from the current datadir */
     void on_openDebugLogfileButton_clicked();
+    /** open dialog to add new peer */
+    void on_addPeerClicked();
+    /** open dialog to remove peer */
+    void on_removePeerClicked();
+    /** open dialog to test peer */
+    void on_testPeerClicked();
     /** change the time range of the network traffic graph */
     void on_sldGraphRange_valueChanged(int value);
     /** update traffic statistics */
