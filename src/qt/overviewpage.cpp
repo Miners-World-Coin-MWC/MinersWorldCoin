@@ -7,7 +7,7 @@
 
 #include <qt/bitcoinunits.h>
 #include <qt/clientmodel.h>
-#include <qt/clientversion.h>
+#include <clientversion.h>
 #include <qt/guiconstants.h>
 #include <qt/guiutil.h>
 #include <qt/optionsmodel.h>
