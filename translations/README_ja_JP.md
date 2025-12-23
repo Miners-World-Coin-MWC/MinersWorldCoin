@@ -4,7 +4,7 @@
 MinersWorldCoin Core [MWC]
 </h1>
 
-言語を選択: EN | [CN](./translations/README_zh_CN.md) | [PT](./translations/README_pt_BR.md) | [FA](./translations/README_fa_IR.md) | [VI](./translations/README_vi_VN.md) | [JA](./translations/README_ja_JP.md)
+言語を選択: [EN](/README.md) | [CN](./README_zh_CN.md) | [PT](./README_pt_BR.md) | [FA](./README_fa_IR.md) | [VI](./README_vi_VN.md) | JA
 
 ![CPUのみ](https://img.shields.io/badge/Mining-CPU%20Only-orange)
 ![ASIC不可](https://img.shields.io/badge/ASIC-Resistant-green)

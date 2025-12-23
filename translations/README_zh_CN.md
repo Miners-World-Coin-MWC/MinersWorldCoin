@@ -8,7 +8,7 @@ MinersWorldCoin 核心 [MWC]
 
 </h1>
 
-选择语言：EN | [CN](./translations/README_zh_CN.md) | [PT](./translations/README_pt_BR.md) | [FA](./translations/README_fa_IR.md) | [VI](./translations/README_vi_VN.md) | [日语](./translations/README_ja_JP.md)
+选择语言：[EN](/README.md) | CN | [PT](./README_pt_BR.md) | [FA](./README_fa_IR.md) | [VI](./README_vi_VN.md) | [日语](./README_ja_JP.md)
 
 ![仅限 CPU 挖矿](https://img.shields.io/badge/Mining-CPU%20Only-orange)
 

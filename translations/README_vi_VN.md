@@ -4,7 +4,7 @@
 MinersWorldCoin Core [MWC]
 </h1>
 
-Chọn ngôn ngữ: EN | [CN](./translations/README_zh_CN.md) | [PT](./translations/README_pt_BR.md) | [FA](./translations/README_fa_IR.md) | [VI](./translations/README_vi_VN.md) | [JA](./translations/README_ja_JP.md)
+Chọn ngôn ngữ: [EN](/README.md) | [CN](./README_zh_CN.md) | [PT](./README_pt_BR.md) | [FA](./README_fa_IR.md) | VI | [JA](./README_ja_JP.md)
 
 ![Chỉ dùng CPU](https://img.shields.io/badge/Mining-CPU%20Only-orange)
 ![Không dùng ASIC](https://img.shields.io/badge/ASIC-Resistant-green)
