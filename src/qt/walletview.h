@@ -19,7 +19,6 @@ class SendCoinsRecipient;
 class TransactionView;
 class WalletModel;
 class AddressBookPage;
-class ImportKeysDialog;
 
 QT_BEGIN_NAMESPACE
 class QModelIndex;
@@ -65,7 +64,6 @@ private:
     SendCoinsDialog *sendCoinsPage;
     AddressBookPage *usedSendingAddressesPage;
     AddressBookPage *usedReceivingAddressesPage;
-    ImportKeysDialog *importKeysDialog;
 
     TransactionView *transactionView;
 
@@ -77,8 +75,6 @@ public Q_SLOTS:
     void gotoOverviewPage();
     /** Switch to history (transactions) page */
     void gotoHistoryPage();
-    /** Switch to import keys dialog */
-    void gotoImportKeysDialog();
     /** Switch to receive coins page */
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
@@ -107,9 +103,6 @@ public Q_SLOTS:
     void usedSendingAddresses();
     /** Show used receiving addresses */
     void usedReceivingAddresses();
-
-    /** Import a private key */
-    void importPrivateKey();
 
     /** Re-emit encryption status signal */
     void updateEncryptionStatus();

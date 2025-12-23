@@ -97,7 +97,6 @@ private:
     QAction *sendCoinsMenuAction;
     QAction *usedSendingAddressesAction;
     QAction *usedReceivingAddressesAction;
-    QAction *importPrivateKeyAction;
     QAction *signMessageAction;
     QAction *verifyMessageAction;
     QAction *aboutAction;

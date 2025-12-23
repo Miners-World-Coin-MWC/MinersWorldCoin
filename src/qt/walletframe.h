@@ -85,9 +85,6 @@ public Q_SLOTS:
     /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
 
-    /** import a private key */
-    void importPrivateKey();
-
     /** Show used sending addresses */
     void usedSendingAddresses();
     /** Show used receiving addresses */
