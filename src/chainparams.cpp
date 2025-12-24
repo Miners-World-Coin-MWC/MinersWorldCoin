@@ -229,6 +229,11 @@ public:
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x00");
 
+        // Disable dev fee on testnet
+        nDeveloperFee = 0;
+        nDeveloperFeeStart = std::numeric_limits<int>::max();
+        strDeveloperFeeAddress.clear();
+
         pchMessageStart[0] = 0x95;
         pchMessageStart[1] = 0x54;
         pchMessageStart[2] = 0xe4;
@@ -318,6 +323,11 @@ public:
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x00");
+
+        // Disable dev fee on regtest
+        nDeveloperFee = 0;
+        nDeveloperFeeStart = std::numeric_limits<int>::max();
+        strDeveloperFeeAddress.clear();
 
         pchMessageStart[0] = 0xaf;
         pchMessageStart[1] = 0xfb;
