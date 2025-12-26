@@ -144,7 +144,7 @@ public:
         // This is fine at runtime as we'll fall back to using them as a oneshot if they dont support the
         // service bits we want, but we should get them updated to support all service bits wanted by any
         // release ASAP to avoid it where possible.
-	    // vSeeds.emplace_back("seed.minersworldcoin.org");
+	    vSeeds.emplace_back("seed.minersworldcoin.org");
         	
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1, 20);   // 0x14
