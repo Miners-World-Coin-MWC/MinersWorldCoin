@@ -574,25 +574,39 @@ QVariant TransactionTableModel::data(const QModelIndex &index, int role) const
     case Qt::TextAlignmentRole:
         return column_alignments[index.column()];
     case Qt::ForegroundRole:
-        // Use the "danger" color for abandoned transactions
-        if(rec->status.status == TransactionStatus::Abandoned)
+{
+    // Abandoned transactions = danger red
+    if (rec->status.status == TransactionStatus::Abandoned)
+    {
+        return COLOR_TX_STATUS_DANGER;
+    }
+    // Unconfirmed (but not immature) = muted / grey
+    if (!rec->status.countsForBalance &&
+        rec->status.status != TransactionStatus::Immature)
+    {
+        return COLOR_UNCONFIRMED;
+    }
+    // Amount coloring (MWC style)
+    if (index.column() == Amount)
+    {
+        CAmount amount = rec->credit + rec->debit;
+
+        if (amount < 0)
         {
-            return COLOR_TX_STATUS_DANGER;
+            return QColor("#ef4444"); // red-500 (outgoing)
         }
-        // Non-confirmed (but not immature) as transactions are grey
-        if(!rec->status.countsForBalance && rec->status.status != TransactionStatus::Immature)
+        else if (amount > 0)
         {
-            return COLOR_UNCONFIRMED;
+            return QColor("#22c55e"); // green-500 (incoming)
         }
-        if(index.column() == Amount && (rec->credit+rec->debit) < 0)
-        {
-            return COLOR_NEGATIVE;
-        }
-        if(index.column() == ToAddress)
-        {
-            return addressColor(rec);
-        }
-        break;
+    }
+    // Address coloring
+    if (index.column() == ToAddress)
+    {
+        return addressColor(rec);
+    }
+    break;
+}
     case TypeRole:
         return rec->type;
     case DateRole:
