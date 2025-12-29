@@ -40,6 +40,9 @@ namespace GUIUtil
     // Return a monospace font
     QFont fixedPitchFont();
 
+    // Dark mode theme
+    void ApplyMWCTheme(bool dark);
+
     // Set up widgets for address and amounts
     void setupAddressWidget(QValidatedLineEdit *widget, QWidget *parent);
     void setupAmountWidget(QLineEdit *widget, QWidget *parent);

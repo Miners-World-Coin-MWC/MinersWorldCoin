@@ -581,7 +581,7 @@ int main(int argc, char *argv[])
 #endif
 
     BitcoinApplication app(argc, argv);
-
+    
     // Register meta types used for QMetaObject::invokeMethod
     qRegisterMetaType< bool* >();
     //   Need to pass name here as CAmount is a typedef (see http://qt-project.org/doc/qt-5/qmetatype.html#qRegisterMetaType)
@@ -691,6 +691,9 @@ int main(int argc, char *argv[])
     app.parameterSetup();
     // Load GUI settings from QSettings
     app.createOptionsModel(gArgs.GetBoolArg("-resetguisettings", false));
+    // Load dark mode theme
+    QSettings settings;
+    GUIUtil::ApplyMWCTheme(settings.value("darkMode", true).toBool());
 
     // Subscribe to global signals from core
     uiInterface.InitMessage.connect(InitMessage);
