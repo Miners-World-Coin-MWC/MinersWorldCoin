@@ -151,6 +151,15 @@ void OptionsDialog::setModel(OptionsModel *_model)
         mapper->toFirst();
 
         updateDefaultProxyNets();
+
+        // ===============================
+        // Live Dark / Light Mode Toggle
+        // ===============================
+        connect(_model, &OptionsModel::darkModeChanged,
+                this, [](bool enabled) {
+                    GUIUtil::ApplyMWCTheme(enabled);
+                });
+
     }
 
     /* warn when one of the following settings changes by user action (placed here so init via mapper doesn't trigger them) */
@@ -202,6 +211,7 @@ void OptionsDialog::setMapper()
     /* Display */
     mapper->addMapping(ui->lang, OptionsModel::Language);
     mapper->addMapping(ui->unit, OptionsModel::DisplayUnit);
+    mapper->addMapping(ui->darkMode, OptionsModel::DarkMode);
     mapper->addMapping(ui->thirdPartyTxUrls, OptionsModel::ThirdPartyTxUrls);
 }
 

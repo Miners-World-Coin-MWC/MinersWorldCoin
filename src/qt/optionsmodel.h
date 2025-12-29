@@ -49,6 +49,7 @@ public:
         DatabaseCache,          // int
         SpendZeroConfChange,    // bool
         Listen,                 // bool
+        DarkMode,
         OptionIDRowCount,
     };
 
@@ -96,6 +97,7 @@ Q_SIGNALS:
     void displayUnitChanged(int unit);
     void coinControlFeaturesChanged(bool);
     void hideTrayIconChanged(bool);
+    void darkModeChanged(bool enabled);
 };
 
 #endif // BITCOIN_QT_OPTIONSMODEL_H

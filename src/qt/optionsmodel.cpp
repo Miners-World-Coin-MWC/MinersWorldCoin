@@ -91,6 +91,9 @@ void OptionsModel::Init(bool resetSettings)
     //
     // If gArgs.SoftSetArg() or gArgs.SoftSetBoolArg() return false we were overridden
     // by command-line and show this in the UI.
+    if (!settings.contains("darkMode"))
+        settings.setValue("darkMode", true);
+
 
     // Main
     if (!settings.contains("nDatabaseCache"))
@@ -292,6 +295,8 @@ QVariant OptionsModel::data(const QModelIndex & index, int role) const
             return settings.value("nThreadsScriptVerif");
         case Listen:
             return settings.value("fListen");
+        case DarkMode:
+            return settings.value("darkMode", true);
         default:
             return QVariant();
         }
@@ -427,6 +432,10 @@ bool OptionsModel::setData(const QModelIndex & index, const QVariant & value, in
                 settings.setValue("fListen", value);
                 setRestartRequired(true);
             }
+            break;
+        case DarkMode:
+            settings.setValue("darkMode", value.toBool());
+            Q_EMIT darkModeChanged(value.toBool());
             break;
         default:
             break;
