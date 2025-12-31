@@ -223,7 +223,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 1778930000; // Approx: May 16, 2026 @ 14:00 UTC
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x00");
+        consensus.nMinimumChainWork = uint256S("0x0000000000000000000000000000000000000000000000000000000000380000");
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x00");
@@ -273,7 +273,7 @@ public:
         checkpointData = {
             {
                 {0, uint256S("0x932fceff1b2f171868b1a460e59cf701c8b2c324d07edfd5a58e3cd5dd3c2293")},
-                
+                {13, uint256S("0xd53c0e7a7d7c3b62d98a531070f14a4e0672228d66b16af136438ccf03cb0004")},
             }
         };
 
