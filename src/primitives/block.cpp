@@ -47,8 +47,8 @@ uint256 CBlockHeader::GetPoWHash() const
         .version = YESPOWER_1_0, 
         .N = 2048, 
         .r = 32, 
-        .pers = (const uint8_t *)"Let the quest begin",
-        .perslen = 19
+        .pers = (const uint8_t *)"Mining made easy and accessible to all - Miners World Coin 2025",
+        .perslen = 63
     };
 
     uint32_t time = le32dec(&ss[68]);
