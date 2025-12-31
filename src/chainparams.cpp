@@ -118,7 +118,7 @@ public:
         nDeveloperFeeStart = 1;
   
         // Developer wallet address
-        strDeveloperFeeAddress = std::string("97eFcPMFYCyH2Y2qY4tsUS6CkYwTZdQ2am");
+        strDeveloperFeeAddress = std::string("98AUvgXPjAdKHj3FqwAPJNpd8XergXBL59");
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.

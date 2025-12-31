@@ -667,7 +667,7 @@ UniValue getblocktemplate(const JSONRPCRequest& request)
             // Ensure we can extract a valid address from the output script
             if (ExtractDestination(pblock->vtx[0]->vout[1].scriptPubKey, address)) {
                 // Declare and initialize strDeveloperFeeAddress with the correct value
-                std::string strDeveloperFeeAddress = "97eFcPMFYCyH2Y2qY4tsUS6CkYwTZdQ2am"; // Replace with actual address
+                std::string strDeveloperFeeAddress = "98AUvgXPjAdKHj3FqwAPJNpd8XergXBL59"; // Replace with actual address
 
                 // Decode and validate the developer fee address
                 CTxDestination dest = DecodeDestination(strDeveloperFeeAddress);
