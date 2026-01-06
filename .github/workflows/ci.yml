@@ -32,8 +32,10 @@ jobs:
         name:
           - aarch64-linux
           - armhf-linux
+          - armv7-linux
           - i686-linux
           - i686-win
+          - riscv64-linux
           - x86_64-linux
           - x86_64-linux-musl
           - x86_64-macos
@@ -58,6 +60,13 @@ jobs:
             check-symbols: false
             dep-opts: "NO_QT=1"
             config-opts: "--enable-glibc-back-compat LDFLAGS=-static-libstdc++ --disable-tests"
+            goal: install
+          - name: armv7-linux
+            host: arm-linux-gnueabihf
+            container: ubuntu:20.04
+            packages: g++-arm-linux-gnueabihf qemu-user-static qemu-user
+            dep-opts: ""
+            config-opts: "--disable-tests --without-gui"
             goal: install
           - name: aarch64-linux
             host: aarch64-linux-gnu
@@ -85,6 +94,12 @@ jobs:
             packages: build-base linux-headers cmake python3 bash git curl perl automake autoconf libtool pkgconfig
             dep-opts: "NO_QT=1 NO_OPENSSL_LEGACY=1"
             config-opts: "--disable-tests --without-gui CXXFLAGS=-Wno-deprecated-declarations"
+          - name: riscv64-linux
+            host: riscv64-linux-gnu
+            container: ubuntu:20.04
+            packages: g++-riscv64-linux-gnu qemu-user-static qemu-user
+            dep-opts: "NO_QT=1"
+            config-opts: "--disable-tests"
             goal: install
           - name: i686-win
             host: i686-w64-mingw32
