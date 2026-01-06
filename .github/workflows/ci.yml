@@ -34,6 +34,7 @@ jobs:
           - armhf-linux
           - i686-linux
           - i686-win
+          - riscv64-linux
           - x86_64-linux
           - x86_64-macos
           - x86_64-win
@@ -77,6 +78,13 @@ jobs:
             check-symbols: false
             dep-opts: "NO_QT=1"
             config-opts: "--enable-zmq --enable-glibc-back-compat LDFLAGS=-static-libstdc++ --disable-tests"
+            goal: install
+          - name: riscv64-linux
+            host: riscv64-linux-gnu
+            container: ubuntu:20.04
+            packages: g++-riscv64-linux-gnu qemu-user-static qemu-user
+            dep-opts: "NO_QT=1"
+            config-opts: "--disable-tests"
             goal: install
           - name: i686-win
             host: i686-w64-mingw32
