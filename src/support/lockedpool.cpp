@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <stdexcept>
 
 LockedPoolManager* LockedPoolManager::_instance = nullptr;
 std::once_flag LockedPoolManager::init_flag;

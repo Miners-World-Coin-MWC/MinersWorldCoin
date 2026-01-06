@@ -37,6 +37,7 @@ jobs:
           - i686-win
           - riscv64-linux
           - x86_64-linux
+          - x86_64-linux-musl
           - x86_64-macos
           - x86_64-win
         include:
@@ -87,6 +88,12 @@ jobs:
             dep-opts: "NO_QT=1"
             config-opts: "--enable-zmq --enable-glibc-back-compat LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
+          - name: x86_64-linux-musl
+            host: x86_64-linux-musl
+            container: alpine:3.19
+            packages: build-base linux-headers cmake python3 bash git curl perl automake autoconf libtool pkgconfig
+            dep-opts: "NO_QT=1 NO_OPENSSL_LEGACY=1"
+            config-opts: "--disable-tests --without-gui CXXFLAGS=-Wno-deprecated-declarations"
           - name: riscv64-linux
             host: riscv64-linux-gnu
             container: ubuntu:20.04
@@ -162,14 +169,21 @@ jobs:
 
       - name: Install packages
         run: |
-          apt-get update
-          apt-get install -y build-essential libtool autotools-dev automake \
-               pkg-config bsdmainutils curl ca-certificates ccache rsync git \
-               procps bison python3 python3-pip python3-setuptools python3-wheel autoconf-archive
-          ln -sf /usr/bin/python3 /usr/bin/python
-          apt-get install -y ${{ matrix.packages }}
-          python3 -m pip install setuptools==70.3.0 --upgrade
-          python3 -m pip install lief
+          if command -v apt-get >/dev/null; then
+            apt-get update
+            apt-get install -y build-essential libtool autotools-dev automake \
+                pkg-config bsdmainutils curl ca-certificates ccache rsync git \
+                procps bison python3 python3-pip python3-setuptools python3-wheel autoconf-archive
+            ln -sf /usr/bin/python3 /usr/bin/python
+            apt-get install -y ${{ matrix.packages }}
+            else
+            apk add --no-cache \
+                build-base linux-headers cmake \
+                python3 bash git curl perl \
+                automake autoconf libtool pkgconfig
+            fi
+            python3 -m pip install setuptools==70.3.0 --upgrade || true
+            python3 -m pip install lief || true
 
       - name: Post install
         if: ${{ matrix.postinstall }}
