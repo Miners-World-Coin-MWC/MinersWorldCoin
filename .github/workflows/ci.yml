@@ -32,6 +32,7 @@ jobs:
         name:
           - aarch64-linux
           - armhf-linux
+          - armv7-linux
           - i686-linux
           - i686-win
           - riscv64-linux
@@ -58,6 +59,13 @@ jobs:
             check-symbols: false
             dep-opts: "NO_QT=1"
             config-opts: "--enable-glibc-back-compat LDFLAGS=-static-libstdc++ --disable-tests"
+            goal: install
+          - name: armv7-linux
+            host: arm-linux-gnueabihf
+            container: ubuntu:20.04
+            packages: g++-arm-linux-gnueabihf qemu-user-static qemu-user
+            dep-opts: ""
+            config-opts: "--disable-tests --without-gui"
             goal: install
           - name: aarch64-linux
             host: aarch64-linux-gnu
