@@ -21,10 +21,10 @@ jobs:
       CCACHE_TEMPDIR: /tmp/.ccache-temp
       CCACHE_COMPRESS: "1"
       PYTHON_DEBUG: "1"
-      CACHE_NONCE: "1"
+      CACHE_NONCE: "3"
       WINEDEBUG: fixme-all
       WINEPREFIX: /tmp/wineprefix/
-      SDK_URL: https://depends.dogecoincore.org
+      CACHE_NAME: "ci-cache"
 
     strategy:
       fail-fast: false
@@ -39,7 +39,9 @@ jobs:
           - x86_64-linux
           - x86_64-linux-musl
           - x86_64-macos
+          - aarch64-macos
           - x86_64-win
+
         include:
           - name: i686-linux
             host: i686-pc-linux-gnu
@@ -48,9 +50,10 @@ jobs:
             run-bench: false
             check-security: true
             check-symbols: false
-            dep-opts: "NO_QT=1"
-            config-opts: "--enable-zmq --enable-glibc-back-compat LDFLAGS=-static-libstdc++ --disable-tests"
+            dep-opts: ""
+            config-opts: "--enable-zmq --enable-glibc-back-compat --with-gui=qt5 LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
+
           - name: armhf-linux
             host: arm-linux-gnueabihf
             container: ubuntu:20.04
@@ -61,6 +64,7 @@ jobs:
             dep-opts: "NO_QT=1"
             config-opts: "--enable-glibc-back-compat LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
+
           - name: armv7-linux
             host: arm-linux-gnueabihf
             container: ubuntu:20.04
@@ -68,6 +72,7 @@ jobs:
             dep-opts: ""
             config-opts: "--disable-tests --without-gui"
             goal: install
+
           - name: aarch64-linux
             host: aarch64-linux-gnu
             container: ubuntu:20.04
@@ -78,6 +83,7 @@ jobs:
             dep-opts: "NO_QT=1"
             config-opts: "--enable-zmq --enable-glibc-back-compat LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
+
           - name: x86_64-linux
             host: x86_64-unknown-linux-gnu
             container: ubuntu:20.04
@@ -85,15 +91,17 @@ jobs:
             run-bench: false
             check-security: true
             check-symbols: false
-            dep-opts: "NO_QT=1"
-            config-opts: "--enable-zmq --enable-glibc-back-compat LDFLAGS=-static-libstdc++ --disable-tests"
+            dep-opts: ""
+            config-opts: "--enable-zmq --enable-glibc-back-compat --with-gui=qt5 LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
+
           - name: x86_64-linux-musl
             host: x86_64-linux-musl
             container: alpine:3.19
             packages: build-base linux-headers cmake python3 bash git curl perl automake autoconf libtool pkgconfig
             dep-opts: "NO_QT=1 NO_OPENSSL_LEGACY=1"
             config-opts: "--disable-tests --without-gui CXXFLAGS=-Wno-deprecated-declarations"
+
           - name: riscv64-linux
             host: riscv64-linux-gnu
             container: ubuntu:20.04
@@ -101,6 +109,7 @@ jobs:
             dep-opts: "NO_QT=1"
             config-opts: "--disable-tests"
             goal: install
+
           - name: i686-win
             host: i686-w64-mingw32
             container: ubuntu:20.04
@@ -120,6 +129,7 @@ jobs:
             dep-opts: ""
             config-opts: "--with-gui=qt5 --disable-tests"
             goal: install
+
           - name: x86_64-win
             host: x86_64-w64-mingw32
             container: ubuntu:20.04
@@ -137,6 +147,7 @@ jobs:
             dep-opts: ""
             config-opts: "--with-gui=qt5 --disable-tests"
             goal: install
+
           - name: x86_64-macos
             host: x86_64-apple-darwin11
             container: ubuntu:20.04
@@ -148,20 +159,48 @@ jobs:
             config-opts: "--with-gui=qt5 --disable-tests"
             goal: deploy
             sdk: 10.11
+            sdk-url: "https://depends.dogecoincore.org"
+            sdk-filename: "MacOSX10.11.sdk.tar.gz"
             sdk-shasum: "bec9d089ebf2e2dd59b1a811a38ec78ebd5da18cbbcd6ab39d1e59f64ac5033f"
 
-    runs-on: ubuntu-22.04
+          - name: aarch64-macos
+            host: aarch64-apple-darwin21
+            runs-on: macos-14
+            packages: cmake imagemagick libcap-dev librsvg2-bin libz-dev libbz2-dev libtiff-tools libtinfo5 xorriso
+            run-bench: false
+            check-security: true
+            check-symbols: false
+            dep-opts: "WITH_OPENSSL=1"
+            config-opts: "--with-gui=qt5 --disable-tests"
+            goal: deploy
+            sdk: 11.3
+            sdk-url: "https://github.com/phracker/MacOSX-SDKs/releases/download/11.3"
+            sdk-filename: "MacOSX11.3.sdk.tar.xz"
+            sdk-shasum: "CD4F08A75577145B8F05245A2975F7C81401D75E9535DCFFBB879EE1DEEFCBF4"
+
+    runs-on: ${{ matrix.runs-on || 'ubuntu-22.04' }}
+
     container:
       image: ${{ matrix.container }}
       options: ${{ matrix.container-options == '' && '-e 1MWC=1MWC' || matrix.container-options }}
 
     steps:
-      - name: Configure container
+
+      - name: Configure container (Linux only)
+        if: ${{ matrix.container && matrix.name != 'aarch64-macos' }}
         run: |
-          ln -snf /usr/share/zoneinfo/Etc/UTC /etc/localtime
-          echo Etc/UTC > /etc/timezone
-          mkdir -p $WINEPREFIX
+          ln -snf /usr/share/zoneinfo/Etc/UTC /etc/localtime || true
+          echo Etc/UTC > /etc/timezone || true
+          mkdir -p $WINEPREFIX || true
           uname -a
+
+      - name: Configure macOS runner
+        if: ${{ matrix.name == 'aarch64-macos' }}
+        run: |
+          uname -a
+          echo "macOS ARM runner"
+          xcode-select -p
+          clang --version
 
       - name: Pre install
         if: ${{ matrix.preinstall }}
@@ -169,21 +208,95 @@ jobs:
 
       - name: Install packages
         run: |
-          if command -v apt-get >/dev/null; then
+          if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
+            echo "Installing macOS build dependencies"
+
+            brew update || true
+
+            brew install \
+              cmake \
+              imagemagick \
+              libtiff \
+              xorriso \
+              autoconf \
+              automake \
+              libtool \
+              pkg-config \
+              ccache \
+              librsvg \
+              python
+
+            echo "$(brew --prefix python)/bin" >> $GITHUB_PATH
+
+            export PATH="$(brew --prefix python)/bin:$PATH"
+            export PIP_BREAK_SYSTEM_PACKAGES=1
+
+            # Install into user site-packages instead of Homebrew's protected
+            # system site-packages (avoids the earlier uninstall-no-record-file
+            # / Permission denied errors). Unlike a venv, --user packages are
+            # auto-detected by ANY python3.14 interpreter that isn't itself in
+            # a venv -- which matters because the depends build system spawns
+            # its own python3 subprocesses that don't reliably inherit our PATH.
+            python3 -m pip install --user --upgrade pip setuptools wheel virtualenv --break-system-packages
+            python3 -m pip install --user lief --break-system-packages || true
+
+            echo "Python:"
+            which python3
+            python3 --version
+
+            echo "Checking setuptools:"
+            python3 -c "import setuptools; print(setuptools.__version__)"
+
+
+          elif command -v apt-get >/dev/null; then
+
             apt-get update
-            apt-get install -y build-essential libtool autotools-dev automake \
-                pkg-config bsdmainutils curl ca-certificates ccache rsync git \
-                procps bison python3 python3-pip python3-setuptools python3-wheel autoconf-archive
+
+            apt-get install -y \
+              build-essential \
+              libtool \
+              autotools-dev \
+              automake \
+              pkg-config \
+              bsdmainutils \
+              curl \
+              ca-certificates \
+              ccache \
+              rsync \
+              git \
+              procps \
+              bison \
+              python3 \
+              python3-pip \
+              python3-setuptools \
+              python3-wheel \
+              autoconf-archive
+
             ln -sf /usr/bin/python3 /usr/bin/python
+
             apt-get install -y ${{ matrix.packages }}
-            else
+
+          else
+
             apk add --no-cache \
-                build-base linux-headers cmake \
-                python3 bash git curl perl \
-                automake autoconf libtool pkgconfig
-            fi
-            python3 -m pip install setuptools==70.3.0 --upgrade || true
-            python3 -m pip install lief || true
+              build-base \
+              linux-headers \
+              cmake \
+              python3 \
+              bash \
+              git \
+              curl \
+              perl \
+              automake \
+              autoconf \
+              libtool \
+              pkgconfig
+
+          fi
+
+          python3 -m ensurepip --upgrade || true
+          python3 -m pip install --upgrade pip setuptools wheel || true
+          python3 -m pip install lief || true
 
       - name: Post install
         if: ${{ matrix.postinstall }}
@@ -204,64 +317,104 @@ jobs:
         if: ${{ matrix.sdk }}
         uses: actions/cache@v4
         env:
-          cache-name: sdk
+          CACHE_NAME: sdk
         with:
           path: ./depends/sdk-sources
-          key: ${{ matrix.name }}-${{ env.cache-name }}-${{ hashFiles('.github/workflows/ci.yml') }}
+          key: ${{ matrix.name }}-${{ env.CACHE_NAME }}-${{ hashFiles('.github/workflows/ci.yml') }}
 
       - name: Install SDK
         if: ${{ matrix.sdk }}
-        env:
-          sdk-filename: MacOSX${{ matrix.sdk }}.sdk.tar.gz
+        shell: bash
         run: |
           mkdir -p depends/sdk-sources
           mkdir -p depends/SDKs
 
           cd depends/sdk-sources
 
-          # First check: does NOT include path
-          echo "${{ matrix.sdk-shasum }}  ${{ env.sdk-filename }}" | sha256sum -c || \
-          curl --location --fail "$SDK_URL/${{ env.sdk-filename }}" -o "${{ env.sdk-filename }}"
+          FILE="${{ matrix.sdk-filename }}"
 
-          # Second check AFTER download
-          echo "${{ matrix.sdk-shasum }}  ${{ env.sdk-filename }}" | sha256sum -c
+          # FIX: macOS uses shasum instead of sha256sum
+          if command -v sha256sum >/dev/null; then
+            echo "${{ matrix.sdk-shasum }}  $FILE" | sha256sum -c || \
+              curl --insecure --location --fail "${{ matrix.sdk-url }}/$FILE" -o "$FILE"
+            echo "${{ matrix.sdk-shasum }}  $FILE" | sha256sum -c
+          else
+            echo "${{ matrix.sdk-shasum }}  $FILE" | shasum -a 256 -c || \
+              curl --location --fail "${{ matrix.sdk-url }}/$FILE" -o "$FILE"
+            echo "${{ matrix.sdk-shasum }}  $FILE" | shasum -a 256 -c
+          fi
 
           cd ../..
 
-          tar -C depends/SDKs -xf depends/sdk-sources/${{ env.sdk-filename }}
-
-      - name: Dependency cache
-        uses: actions/cache@v4
-        env:
-          cache-name: depends
-        with:
-          path: ./depends/built
-          key: ${{ matrix.name }}-${{ env.cache-name }}-${{ hashFiles('depends/packages/*', '.github/workflows/ci.yml') }}
+          tar -C depends/SDKs -xf depends/sdk-sources/$FILE
 
       - name: Build depends
-        run: make $MAKEJOBS -C depends HOST=${{ matrix.host }} ${{ matrix.dep-opts }}
+        run: |
+          export CONFIG_SHELL=/bin/bash
+          export SHELL=/bin/bash
+          if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
 
-      # - name: Build depends
-      #   run: |
-      #     set +e
-      #     make $MAKEJOBS -C depends HOST=${{ matrix.host }} ${{ matrix.dep-opts }}
-      #     STATUS=$?
+            echo "Configuring native macOS ARM build environment"
 
-      #     echo "==== Attempting to dump util/domd files found so far ===="
-      #     find depends/work -path "*/openssl*/util/domd" -exec sh -c '
-      #       echo "---- {} ----"
-      #       sed -n "1,200p" "{}"
-      #     ' \;
+            export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+            export MACOSX_DEPLOYMENT_TARGET=11.0
 
-      #     exit $STATUS
+            export CC="$(xcrun --find clang)"
+            export CXX="$(xcrun --find clang++)"
+
+            export HOMEBREW_PREFIX=$(brew --prefix)
+
+            export PATH="$HOMEBREW_PREFIX/bin:$PATH"
+
+            # Use Homebrew's python3 directly -- setuptools/pip/wheel/lief
+            # were installed with --user in "Install packages", so this
+            # interpreter (and any python3 subprocess the depends build
+            # spawns) picks them up automatically via user site-packages.
+            export PYTHON="$HOMEBREW_PREFIX/bin/python3"
+            export PYTHON3="$HOMEBREW_PREFIX/bin/python3"
+
+            export PIP_BREAK_SYSTEM_PACKAGES=1
+
+            export CONFIG_SHELL=/bin/bash
+            export SHELL=/bin/bash
+
+            echo "Using Python:"
+            $PYTHON --version
+
+            echo "Using:"
+            echo "SDKROOT=$SDKROOT"
+            echo "CC=$CC"
+            echo "CXX=$CXX"
+            echo "OPENSSL_TARGET=$OPENSSL_TARGET"
+
+            $PYTHON -m pip install --user --upgrade ez_setup --break-system-packages || true
+
+            $PYTHON -c "import setuptools; print('setuptools OK')"
+
+            ln -sf "$PYTHON" /usr/local/bin/python || true
+
+            # Persist the SDK path for later job steps. `export` here only
+            # applies within this step's shell process, so anything the
+            # "Build MinersWorldCoin" step needs must be written to
+            # $GITHUB_ENV explicitly.
+            echo "MACOS_SDK_PATH=$SDKROOT" >> "$GITHUB_ENV"
+            echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> "$GITHUB_ENV"
+
+          fi
+
+
+          make $MAKEJOBS -C depends \
+            HOST=${{ matrix.host }} \
+            OPENSSL_TARGET=$OPENSSL_TARGET \
+            ${{ matrix.dep-opts }}
 
       - name: CCache
         uses: actions/cache@v4
         env:
-          cache-name: ccache
+          CACHE_NAME: ccache
         with:
           path: ~/.ccache
-          key: ${{ matrix.name }}-${{ env.cache-name }}-${{ hashFiles('**/configure.ac', '.github/workflows/ci.yml') }}
+          key: ${{ matrix.name }}-${{ env.CACHE_NAME }}-${{ hashFiles('**/configure.ac', '.github/workflows/ci.yml') }}
 
       - name: Build MinersWorldCoin
         env:
@@ -277,16 +430,26 @@ jobs:
           ./autogen.sh
           chmod +x configure || true
 
+          # Only the aarch64-macos leg needs an explicit sysroot. Everywhere
+          # else SDKFLAGS stays empty so nothing changes for those builds.
+          SDKFLAGS=""
+          EXTRA_LDFLAGS=""
+          if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
+            SDKFLAGS="-isysroot ${MACOS_SDK_PATH}"
+            EXTRA_LDFLAGS="-L${MACOS_SDK_PATH}/usr/lib"
+          fi
+
           ./configure --prefix=`pwd`/depends/${{ matrix.host }} \
             ${{ matrix.config-opts }} \
             --enable-reduce-exports \
-            CFLAGS="-pipe -O2 -DGIT_COMMIT_ID=\\\"$SHORT_COMMIT\\\"" \
-            CXXFLAGS="-std=c++17 -pipe -O2 -DGIT_COMMIT_ID=\\\"$SHORT_COMMIT\\\"" \
+            CFLAGS="$SDKFLAGS -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            CXXFLAGS="$SDKFLAGS -std=c++17 -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            LDFLAGS="$SDKFLAGS $EXTRA_LDFLAGS" \
             || (cat config.log && false)
 
           make $MAKEJOBS ${{ matrix.goal }} \
-            CXXFLAGS="-std=c++17" \
-            || (echo "Build failure. Verbose build follows." && make ${{ matrix.goal }} CXXFLAGS="-std=c++17" V=1 ; false)
+            CXXFLAGS="-std=c++17 $SDKFLAGS" \
+            || (echo "Build failure. Verbose build follows." && make ${{ matrix.goal }} CXXFLAGS="-std=c++17 $SDKFLAGS" V=1 ; false)
 
       - name: Run benchmark
         if: ${{ matrix.run-bench }}
@@ -319,4 +482,6 @@ jobs:
             depends/${{ matrix.host }}/share/man/man1/minersworldcoin*
             dist/MinersWorldCoin-Qt.app
             MinersWorldCoin-Core.dmg
+            dist/*.dmg
+            dist/*.app
             ${{ matrix.name }}-bench.csv

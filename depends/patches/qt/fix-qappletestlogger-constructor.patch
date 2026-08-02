@@ -1,0 +1,14 @@
+--- a/qtbase/src/testlib/qappletestlogger.cpp
++++ b/qtbase/src/testlib/qappletestlogger.cpp
+@@ -85,6 +85,13 @@ struct MessageData
+ {
+     QtMsgType messageType = QtFatalMsg;
+     const char *categorySuffix = nullptr;
++
++    MessageData(QtMsgType type, const char *suffix)
++        : messageType(type),
++          categorySuffix(suffix)
++    {
++    }
++
+     void generateCategory(QTestCharBuffer *category)

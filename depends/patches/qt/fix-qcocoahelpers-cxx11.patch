@@ -1,0 +1,13 @@
+--- a/qtbase/src/plugins/platforms/cocoa/qcocoahelpers.h
++++ b/qtbase/src/plugins/platforms/cocoa/qcocoahelpers.h
+@@ -183,10 +183,10 @@ struct QVarLengthArrayIteratorWrapper
+ {
+-    constexpr auto begin() const { using std::begin; return begin(r); }
+-    constexpr auto begin() { using std::begin; return begin(r); }
+-    constexpr auto end() const { using std::end; return end(r); }
+-    constexpr auto end() { using std::end; return end(r); }
++    constexpr auto begin() const -> decltype(std::begin(r)) { using std::begin; return begin(r); }
++    constexpr auto begin() -> decltype(std::begin(r)) { using std::begin; return begin(r); }
++    constexpr auto end() const -> decltype(std::end(r)) { using std::end; return end(r); }
++    constexpr auto end() -> decltype(std::end(r)) { using std::end; return end(r); }
+ };
