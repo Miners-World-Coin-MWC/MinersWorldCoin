@@ -101,6 +101,7 @@ jobs:
             packages: build-base linux-headers cmake python3 bash git curl perl automake autoconf libtool pkgconfig
             dep-opts: "NO_QT=1 NO_OPENSSL_LEGACY=1"
             config-opts: "--disable-tests --without-gui CXXFLAGS=-Wno-deprecated-declarations"
+            goal: install
 
           - name: riscv64-linux
             host: riscv64-linux-gnu
