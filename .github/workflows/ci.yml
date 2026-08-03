@@ -38,6 +38,7 @@ jobs:
           - riscv64-linux
           - x86_64-linux
           - x86_64-linux-musl
+          - aarch64-linux-musl
           - x86_64-macos
           - aarch64-macos
           - x86_64-win
@@ -97,6 +98,19 @@ jobs:
 
           - name: x86_64-linux-musl
             host: x86_64-linux-musl
+            container: alpine:3.19
+            packages: build-base linux-headers cmake python3 bash git curl perl automake autoconf libtool pkgconfig
+            dep-opts: "NO_QT=1 NO_OPENSSL_LEGACY=1"
+            config-opts: "--disable-tests --without-gui CXXFLAGS=-Wno-deprecated-declarations"
+            goal: install
+
+          # Runs on a native arm64 hosted runner, so `container: alpine:3.19`
+          # pulls Alpine's arm64 image automatically -- same native-build
+          # pattern as x86_64-linux-musl above, just on arm64 hardware. No
+          # cross-toolchain or QEMU emulation needed.
+          - name: aarch64-linux-musl
+            host: aarch64-linux-musl
+            runs-on: ubuntu-24.04-arm
             container: alpine:3.19
             packages: build-base linux-headers cmake python3 bash git curl perl automake autoconf libtool pkgconfig
             dep-opts: "NO_QT=1 NO_OPENSSL_LEGACY=1"
