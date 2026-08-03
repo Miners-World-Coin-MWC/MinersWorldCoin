@@ -111,7 +111,7 @@ jobs:
           - name: aarch64-linux-musl
             host: aarch64-linux-musl
             runs-on: ubuntu-24.04-arm
-            container: alpine:3.19
+            # container: alpine:3.19
             packages: build-base linux-headers cmake python3 bash git curl perl automake autoconf libtool pkgconfig
             dep-opts: "NO_QT=1 NO_OPENSSL_LEGACY=1"
             config-opts: "--disable-tests --without-gui CXXFLAGS=-Wno-deprecated-declarations"
