@@ -720,16 +720,29 @@ struct TransactionNotification
 {
 public:
     TransactionNotification() {}
+
     TransactionNotification(uint256 _hash, ChangeType _status, bool _showTransaction):
-        hash(_hash), status(_status), showTransaction(_showTransaction) {}
+        hash(_hash),
+        status(_status),
+        showTransaction(_showTransaction)
+    {
+    }
 
     void invoke(QObject *ttm)
     {
+        QString strHash = QString::fromStdString(hash.GetHex());
+
+        qDebug() << "NotifyTransactionChanged: "
+                 << strHash
+                 << "status="
+                 << QString::number(status);
+
         QMetaObject::invokeMethod(ttm, "updateTransaction", Qt::QueuedConnection,
                                   Q_ARG(QString, strHash),
                                   Q_ARG(int, status),
                                   Q_ARG(bool, showTransaction));
     }
+
 private:
     uint256 hash;
     ChangeType status;
