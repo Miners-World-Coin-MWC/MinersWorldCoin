@@ -54,6 +54,24 @@ jobs:
             config-opts: "--enable-zmq --enable-glibc-back-compat --with-gui=qt5 LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
 
+          # ==================================================================
+          # ANDROID / TERMUX
+          #
+          # Native ARM64 Termux-compatible build.
+          # This is NOT an APK and does NOT build Qt.
+          # Wallet support remains enabled.
+          # ==================================================================
+          - name: android-arm64
+            host: aarch64-linux-android
+            container: ""
+            packages: ""
+            run-bench: false
+            check-security: false
+            check-symbols: false
+            dep-opts: "NO_QT=1 NO_ZMQ=1 NO_UPNP=1 NO_NATPMP=1"
+            config-opts: "--disable-tests --disable-bench --without-gui --disable-zmq"
+            goal: install
+
           - name: armhf-linux
             host: arm-linux-gnueabihf
             container: ubuntu:20.04
@@ -84,6 +102,7 @@ jobs:
             config-opts: "--enable-zmq --enable-glibc-back-compat LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
 
+          - name: android-arm64
           - name: x86_64-linux
             host: x86_64-unknown-linux-gnu
             container: ubuntu:20.04
@@ -210,6 +229,44 @@ jobs:
       options: ${{ matrix.container-options == '' && '-e 1MWC=1MWC' || matrix.container-options }}
 
     steps:
+
+      # ======================================================================
+      # ANDROID / TERMUX TOOLCHAIN
+      # ======================================================================
+
+      - name: Setup Java 17 for Android build
+        if: ${{ matrix.name == 'android-arm64' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK for Termux build
+        if: ${{ matrix.name == 'android-arm64' }}
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools platforms;android-28'
+
+      - name: Install Android NDK for Termux build
+        if: ${{ matrix.name == 'android-arm64' }}
+        shell: bash
+        run: |
+          set -e
+
+          sdkmanager --install "ndk;23.2.8568313"
+
+          echo "ANDROID_SDK=${ANDROID_SDK_ROOT}" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK=${ANDROID_SDK_ROOT}/ndk/23.2.8568313" >> "$GITHUB_ENV"
+          echo "ANDROID_API_LEVEL=28" >> "$GITHUB_ENV"
+          echo "ANDROID_TOOLCHAIN_BIN=${ANDROID_SDK_ROOT}/ndk/23.2.8568313/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_ENV"
+
+          echo "============================================================"
+          echo "Android / Termux toolchain"
+          echo "============================================================"
+          echo "ANDROID_SDK=${ANDROID_SDK_ROOT}"
+          echo "ANDROID_NDK=${ANDROID_SDK_ROOT}/ndk/23.2.8568313"
+          echo "ANDROID_API_LEVEL=28"
+          echo "ANDROID_TOOLCHAIN_BIN=${ANDROID_SDK_ROOT}/ndk/23.2.8568313/toolchains/llvm/prebuilt/linux-x86_64/bin"
 
       - name: Configure container (Linux only)
         if: ${{ matrix.container && matrix.name != 'aarch64-macos' }}
@@ -546,10 +603,34 @@ jobs:
 
           fi
 
-          make $MAKEJOBS -C depends \
-            HOST=${{ matrix.host }} \
-            OPENSSL_TARGET=$OPENSSL_TARGET \
-            ${{ matrix.dep-opts }}
+          if [[ "${{ matrix.name }}" == "android-arm64" ]]; then
+
+            echo "============================================================"
+            echo "Building MinersWorldCoin dependencies for Android / Termux"
+            echo "============================================================"
+
+            export ANDROID_SDK="${ANDROID_SDK_ROOT}"
+            export ANDROID_NDK="${ANDROID_SDK_ROOT}/ndk/23.2.8568313"
+            export ANDROID_API_LEVEL=28
+            export ANDROID_TOOLCHAIN_BIN="${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+
+            make $MAKEJOBS -C depends \
+              HOST=${{ matrix.host }} \
+              ANDROID_SDK="${ANDROID_SDK}" \
+              ANDROID_NDK="${ANDROID_NDK}" \
+              ANDROID_API_LEVEL="${ANDROID_API_LEVEL}" \
+              ANDROID_TOOLCHAIN_BIN="${ANDROID_TOOLCHAIN_BIN}" \
+              OPENSSL_TARGET=$OPENSSL_TARGET \
+              ${{ matrix.dep-opts }}
+
+          else
+
+            make $MAKEJOBS -C depends \
+              HOST=${{ matrix.host }} \
+              OPENSSL_TARGET=$OPENSSL_TARGET \
+              ${{ matrix.dep-opts }}
+
+          fi
 
       - name: CCache
         uses: actions/cache@v4
@@ -584,21 +665,81 @@ jobs:
             EXTRA_LDFLAGS="-L${MACOS_SDK_PATH}/usr/lib"
           fi
 
-          ./configure --prefix=`pwd`/depends/${{ matrix.host }} \
-            ${{ matrix.config-opts }} \
-            --enable-reduce-exports \
-            CFLAGS="$SDKFLAGS -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-            CXXFLAGS="$SDKFLAGS -std=c++17 -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-            LDFLAGS="$SDKFLAGS $EXTRA_LDFLAGS" \
-            || (cat config.log && false)
+          if [[ "${{ matrix.name }}" == "android-arm64" ]]; then
 
-          make $MAKEJOBS ${{ matrix.goal }} \
-            CXXFLAGS="-std=c++17 $SDKFLAGS" \
-            || (
-              echo "Build failure. Verbose build follows."
-              make ${{ matrix.goal }} CXXFLAGS="-std=c++17 $SDKFLAGS" V=1
-              false
-            )
+            export ANDROID_NDK="${ANDROID_SDK_ROOT}/ndk/23.2.8568313"
+            export ANDROID_API_LEVEL=28
+            export ANDROID_TOOLCHAIN_BIN="${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+
+            export CC="${ANDROID_TOOLCHAIN_BIN}/aarch64-linux-android${ANDROID_API_LEVEL}-clang"
+            export CXX="${ANDROID_TOOLCHAIN_BIN}/aarch64-linux-android${ANDROID_API_LEVEL}-clang++"
+            export AR="${ANDROID_TOOLCHAIN_BIN}/llvm-ar"
+            export RANLIB="${ANDROID_TOOLCHAIN_BIN}/llvm-ranlib"
+            export STRIP="${ANDROID_TOOLCHAIN_BIN}/llvm-strip"
+
+            export CPPFLAGS="-I$(pwd)/depends/${{ matrix.host }}/include"
+            export LDFLAGS="-L$(pwd)/depends/${{ matrix.host }}/lib"
+
+            echo "============================================================"
+            echo "Configuring MinersWorldCoin for Android / Termux"
+            echo "============================================================"
+            echo "CC=$CC"
+            echo "CXX=$CXX"
+            echo "AR=$AR"
+            echo "RANLIB=$RANLIB"
+            echo "STRIP=$STRIP"
+            echo "API=$ANDROID_API_LEVEL"
+
+            ./configure \
+              --host=${{ matrix.host }} \
+              --prefix=`pwd`/depends/${{ matrix.host }} \
+              ${{ matrix.config-opts }} \
+              --enable-reduce-exports \
+              CFLAGS="-O2 -fPIE -fPIC -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+              CXXFLAGS="-std=c++17 -O2 -fPIE -fPIC -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+              CPPFLAGS="$CPPFLAGS" \
+              LDFLAGS="$LDFLAGS -fPIE -pie" \
+              || (cat config.log && false)
+
+            make $MAKEJOBS ${{ matrix.goal }} \
+              CXXFLAGS="-std=c++17 -O2 -fPIE -fPIC" \
+              || (
+                echo "Android / Termux build failure. Verbose build follows."
+                make ${{ matrix.goal }} CXXFLAGS="-std=c++17 -O2 -fPIE -fPIC" V=1
+                false
+              )
+
+            echo "============================================================"
+            echo "Android / Termux binaries"
+            echo "============================================================"
+
+            find "depends/${{ matrix.host }}/bin" -maxdepth 1 -type f -print -exec file {} \; || true
+
+            "${STRIP}" --strip-debug --strip-unneeded \
+              "depends/${{ matrix.host }}/bin/minersworldcoind" \
+              "depends/${{ matrix.host }}/bin/minersworldcoin-cli" \
+              "depends/${{ matrix.host }}/bin/minersworldcoin-tx" \
+              2>/dev/null || true
+
+          else
+
+            ./configure --prefix=`pwd`/depends/${{ matrix.host }} \
+              ${{ matrix.config-opts }} \
+              --enable-reduce-exports \
+              CFLAGS="$SDKFLAGS -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+              CXXFLAGS="$SDKFLAGS -std=c++17 -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+              LDFLAGS="$SDKFLAGS $EXTRA_LDFLAGS" \
+              || (cat config.log && false)
+
+            make $MAKEJOBS ${{ matrix.goal }} \
+              CXXFLAGS="-std=c++17 $SDKFLAGS" \
+              || (
+                echo "Build failure. Verbose build follows."
+                make ${{ matrix.goal }} CXXFLAGS="-std=c++17 $SDKFLAGS" V=1
+                false
+              )
+
+          fi
 
       - name: Run benchmark
         if: ${{ matrix.run-bench }}
