@@ -4,14 +4,11 @@ on:
   push:
     paths-ignore:
       - '**/*.md'
-
   pull_request:
     paths-ignore:
       - 'doc/**'
       - 'contrib/**'
       - '**/*.md'
-
-  workflow_dispatch:
 
 jobs:
   build:
@@ -24,14 +21,13 @@ jobs:
       CCACHE_TEMPDIR: /tmp/.ccache-temp
       CCACHE_COMPRESS: "1"
       PYTHON_DEBUG: "1"
-      CACHE_NONCE: "4"
+      CACHE_NONCE: "3"
       WINEDEBUG: fixme-all
       WINEPREFIX: /tmp/wineprefix/
       CACHE_NAME: "ci-cache"
 
     strategy:
       fail-fast: false
-
       matrix:
         name:
           - aarch64-linux
@@ -49,11 +45,6 @@ jobs:
           - android-x86_64
 
         include:
-
-          # ==================================================================
-          # i686 LINUX
-          # ==================================================================
-
           - name: i686-linux
             host: i686-pc-linux-gnu
             container: ubuntu:20.04
@@ -64,60 +55,6 @@ jobs:
             dep-opts: ""
             config-opts: "--enable-zmq --enable-glibc-back-compat --with-gui=qt5 LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
-
-
-          # ==================================================================
-          # ANDROID / TERMUX ARM64
-          #
-          # Native ARM64 Android executable.
-          #
-          # This is NOT an APK.
-          # This is intended to run directly inside Termux.
-          #
-          # Qt is disabled because this is a CLI/daemon build.
-          # Wallet functionality remains enabled.
-          # ==================================================================
-
-          - name: android-arm64
-            host: aarch64-linux-android
-            container: ""
-            packages: ""
-            android_arch: arm64
-            android_api: 28
-            run-bench: false
-            check-security: false
-            check-symbols: false
-            dep-opts: "NO_QT=1 NO_ZMQ=1 NO_UPNP=1 NO_NATPMP=1"
-            config-opts: "--disable-tests --disable-bench --without-gui --disable-zmq"
-            goal: install
-
-
-          # ==================================================================
-          # ANDROID / TERMUX x86_64
-          #
-          # Native x86_64 Android executable.
-          #
-          # This is NOT an APK.
-          # This is intended to run directly inside Termux on x86_64 Android.
-          # ==================================================================
-
-          - name: android-x86_64
-            host: x86_64-linux-android
-            container: ""
-            packages: ""
-            android_arch: x86_64
-            android_api: 28
-            run-bench: false
-            check-security: false
-            check-symbols: false
-            dep-opts: "NO_QT=1 NO_ZMQ=1 NO_UPNP=1 NO_NATPMP=1"
-            config-opts: "--disable-tests --disable-bench --without-gui --disable-zmq"
-            goal: install
-
-
-          # ==================================================================
-          # ARMHF
-          # ==================================================================
 
           - name: armhf-linux
             host: arm-linux-gnueabihf
@@ -130,11 +67,6 @@ jobs:
             config-opts: "--enable-glibc-back-compat LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
 
-
-          # ==================================================================
-          # ARMV7
-          # ==================================================================
-
           - name: armv7-linux
             host: arm-linux-gnueabihf
             container: ubuntu:20.04
@@ -142,11 +74,6 @@ jobs:
             dep-opts: ""
             config-opts: "--disable-tests --without-gui"
             goal: install
-
-
-          # ==================================================================
-          # AARCH64 LINUX
-          # ==================================================================
 
           - name: aarch64-linux
             host: aarch64-linux-gnu
@@ -159,11 +86,6 @@ jobs:
             config-opts: "--enable-zmq --enable-glibc-back-compat LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
 
-
-          # ==================================================================
-          # x86_64 LINUX
-          # ==================================================================
-
           - name: x86_64-linux
             host: x86_64-unknown-linux-gnu
             container: ubuntu:20.04
@@ -175,11 +97,6 @@ jobs:
             config-opts: "--enable-zmq --enable-glibc-back-compat --with-gui=qt5 LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
 
-
-          # ==================================================================
-          # x86_64 MUSL
-          # ==================================================================
-
           - name: x86_64-linux-musl
             host: x86_64-linux-musl
             container: alpine:3.19
@@ -187,11 +104,6 @@ jobs:
             dep-opts: "NO_QT=1 NO_OPENSSL_LEGACY=1"
             config-opts: "--disable-tests --without-gui CXXFLAGS=-Wno-deprecated-declarations"
             goal: install
-
-
-          # ==================================================================
-          # RISCV64
-          # ==================================================================
 
           - name: riscv64-linux
             host: riscv64-linux-gnu
@@ -201,52 +113,37 @@ jobs:
             config-opts: "--disable-tests"
             goal: install
 
-
-          # ==================================================================
-          # WINDOWS i686
-          # ==================================================================
-
           - name: i686-win
             host: i686-w64-mingw32
             container: ubuntu:20.04
             container-options: --privileged
             packages: python3 nsis g++-mingw-w64-i686 wine32 bc wine-binfmt binfmt-support
-
             preinstall: |
               dpkg --add-architecture i386
-
             postinstall: |
               update-alternatives --set i686-w64-mingw32-gcc /usr/bin/i686-w64-mingw32-gcc-posix
               update-alternatives --set i686-w64-mingw32-g++ /usr/bin/i686-w64-mingw32-g++-posix
               update-binfmts --import /usr/share/binfmts/wine
               update-binfmts --enable
               update-binfmts --display
-
             run-bench: false
             check-security: true
             check-symbols: false
             dep-opts: ""
             config-opts: "--with-gui=qt5 --disable-tests"
             goal: install
-
-
-          # ==================================================================
-          # WINDOWS x86_64
-          # ==================================================================
 
           - name: x86_64-win
             host: x86_64-w64-mingw32
             container: ubuntu:20.04
             container-options: --privileged
             packages: python3 nsis g++-mingw-w64-x86-64 wine64 bc wine-binfmt
-
             postinstall: |
               update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
               update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
               update-binfmts --import /usr/share/binfmts/wine
               update-binfmts --enable
               update-binfmts --display
-
             run-bench: false
             check-security: true
             check-symbols: false
@@ -254,11 +151,17 @@ jobs:
             config-opts: "--with-gui=qt5 --disable-tests"
             goal: install
 
-
-          # ==================================================================
-          # INTEL MACOS
-          # ==================================================================
-
+          # ============================================================
+          # Intel macOS
+          #
+          # PRIMARY SDK:
+          #   Dogecoin Core's existing MacOSX10.11.sdk.tar.gz
+          #
+          # FALLBACK SDK:
+          #   Phracker MacOSX10.11.sdk.tar.xz
+          #
+          # The original SDK remains the first choice.
+          # ============================================================
           - name: x86_64-macos
             host: x86_64-apple-darwin11
             container: ubuntu:20.04
@@ -270,20 +173,23 @@ jobs:
             config-opts: "--with-gui=qt5 --disable-tests"
             goal: deploy
 
+            # Original / primary SDK
             sdk: 10.11
             sdk-url: "https://depends.dogecoincore.org"
             sdk-filename: "MacOSX10.11.sdk.tar.gz"
             sdk-shasum: "bec9d089ebf2e2dd59b1a811a38ec78ebd5da18cbbcd6ab39d1e59f64ac5033f"
 
+            # Fallback SDK
             sdk-fallback-url: "https://github.com/phracker/MacOSX-SDKs/releases/download/11.3"
             sdk-fallback-filename: "MacOSX10.11.sdk.tar.xz"
             sdk-fallback-shasum: "d080fc672d94f95eb54651c37ede80f61761ce4c91f87061e11a20222c8d00c8"
 
-
-          # ==================================================================
-          # APPLE SILICON MACOS
-          # ==================================================================
-
+          # ============================================================
+          # Apple Silicon macOS
+          #
+          # This is a completely separate native ARM64 macOS build.
+          # Its SDK configuration is intentionally unchanged.
+          # ============================================================
           - name: aarch64-macos
             host: aarch64-apple-darwin21
             runs-on: macos-14
@@ -294,16 +200,10 @@ jobs:
             dep-opts: "WITH_OPENSSL=1"
             config-opts: "--with-gui=qt5 --disable-tests"
             goal: deploy
-
             sdk: 11.3
             sdk-url: "https://github.com/phracker/MacOSX-SDKs/releases/download/11.3"
             sdk-filename: "MacOSX11.3.sdk.tar.xz"
             sdk-shasum: "CD4F08A75577145B8F05245A2975F7C81401D75E9535DCFFBB879EE1DEEFCBF4"
-
-
-    # ========================================================================
-    # RUNNER
-    # ========================================================================
 
     runs-on: ${{ matrix.runs-on || 'ubuntu-22.04' }}
 
@@ -311,123 +211,31 @@ jobs:
       image: ${{ matrix.container }}
       options: ${{ matrix.container-options == '' && '-e 1MWC=1MWC' || matrix.container-options }}
 
-
     steps:
 
-      # ======================================================================
-      # ANDROID / TERMUX TOOLCHAIN
-      #
-      # IMPORTANT:
-      #
-      # This is deliberately outside the normal Linux package installation.
-      # Android jobs run directly on the GitHub Ubuntu runner.
-      #
-      # Therefore we MUST NOT run apt-get for Android.
-      # ======================================================================
-
-      - name: Setup Java 17 for Android build
-        if: ${{ startsWith(matrix.name, 'android-') }}
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-
-      - name: Setup Android SDK for Termux build
-        if: ${{ startsWith(matrix.name, 'android-') }}
-        uses: android-actions/setup-android@v4
-        with:
-          packages: 'platform-tools platforms;android-28'
-
-
-      - name: Install Android NDK for Termux build
-        if: ${{ startsWith(matrix.name, 'android-') }}
-        shell: bash
+      - name: Configure container (Linux only)
+        if: ${{ matrix.container && matrix.name != 'aarch64-macos' }}
         run: |
-          set -e
-
-          sdkmanager --install "ndk;23.2.8568313"
-
-          echo "ANDROID_SDK=${ANDROID_SDK_ROOT}" >> "$GITHUB_ENV"
-          echo "ANDROID_NDK=${ANDROID_SDK_ROOT}/ndk/23.2.8568313" >> "$GITHUB_ENV"
-          echo "ANDROID_API_LEVEL=${{ matrix.android_api }}" >> "$GITHUB_ENV"
-          echo "ANDROID_TOOLCHAIN_BIN=${ANDROID_SDK_ROOT}/ndk/23.2.8568313/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_ENV"
-
-          echo ""
-          echo "============================================================"
-          echo "Android / Termux toolchain"
-          echo "============================================================"
-          echo "Architecture: ${{ matrix.android_arch }}"
-          echo "Host:         ${{ matrix.host }}"
-          echo "API:          ${{ matrix.android_api }}"
-          echo "SDK:          ${ANDROID_SDK_ROOT}"
-          echo "NDK:          ${ANDROID_SDK_ROOT}/ndk/23.2.8568313"
-          echo "Toolchain:    ${ANDROID_SDK_ROOT}/ndk/23.2.8568313/toolchains/llvm/prebuilt/linux-x86_64/bin"
-          echo "============================================================"
-
-
-      # ======================================================================
-      # CONTAINER CONFIGURATION
-      #
-      # Android jobs intentionally skip this.
-      # ======================================================================
-
-      - name: Configure container
-        if: ${{ matrix.container }}
-        shell: bash
-        run: |
-          set -e
-
           ln -snf /usr/share/zoneinfo/Etc/UTC /etc/localtime || true
           echo Etc/UTC > /etc/timezone || true
-
-          mkdir -p "$WINEPREFIX" || true
-
+          mkdir -p $WINEPREFIX || true
           uname -a
-
-
-      # ======================================================================
-      # MACOS RUNNER
-      # ======================================================================
 
       - name: Configure macOS runner
         if: ${{ matrix.name == 'aarch64-macos' }}
         run: |
-          set -e
-
           uname -a
-
           echo "macOS ARM runner"
-
           xcode-select -p
-
           clang --version
-
-
-      # ======================================================================
-      # PRE INSTALL
-      # ======================================================================
 
       - name: Pre install
         if: ${{ matrix.preinstall }}
         run: ${{ matrix.preinstall }}
 
-
-      # ======================================================================
-      # INSTALL NORMAL LINUX / MACOS BUILD PACKAGES
-      #
-      # IMPORTANT:
-      # Android is explicitly excluded.
-      # This fixes the apt-get permission failure.
-      # ======================================================================
-
       - name: Install packages
-        if: ${{ !startsWith(matrix.name, 'android-') }}
         run: |
-          set -e
-
           if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
-
             echo "Installing macOS build dependencies"
 
             brew update || true
@@ -445,24 +253,13 @@ jobs:
               librsvg \
               python
 
-            echo "$(brew --prefix python)/bin" >> "$GITHUB_PATH"
+            echo "$(brew --prefix python)/bin" >> $GITHUB_PATH
 
             export PATH="$(brew --prefix python)/bin:$PATH"
             export PIP_BREAK_SYSTEM_PACKAGES=1
 
-            python3 -m pip install \
-              --user \
-              --upgrade \
-              pip \
-              setuptools \
-              wheel \
-              virtualenv \
-              --break-system-packages
-
-            python3 -m pip install \
-              --user \
-              lief \
-              --break-system-packages || true
+            python3 -m pip install --user --upgrade pip setuptools wheel virtualenv --break-system-packages
+            python3 -m pip install --user lief --break-system-packages || true
 
             echo "Python:"
             which python3
@@ -471,7 +268,7 @@ jobs:
             echo "Checking setuptools:"
             python3 -c "import setuptools; print(setuptools.__version__)"
 
-          elif command -v apt-get >/dev/null 2>&1; then
+          elif command -v apt-get >/dev/null; then
 
             apt-get update
 
@@ -497,9 +294,7 @@ jobs:
 
             ln -sf /usr/bin/python3 /usr/bin/python
 
-            if [[ -n "${{ matrix.packages }}" ]]; then
-              apt-get install -y ${{ matrix.packages }}
-            fi
+            apt-get install -y ${{ matrix.packages }}
 
           else
 
@@ -523,45 +318,20 @@ jobs:
           python3 -m pip install --upgrade pip setuptools wheel || true
           python3 -m pip install lief || true
 
-
-      # ======================================================================
-      # POST INSTALL
-      # ======================================================================
-
       - name: Post install
         if: ${{ matrix.postinstall }}
         run: ${{ matrix.postinstall }}
-
-
-      # ======================================================================
-      # CHECKOUT
-      # ======================================================================
 
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-
-      # ======================================================================
-      # FIX PERMISSIONS / SUBMODULES
-      # ======================================================================
-
       - name: Fix permissions and init submodules
-        shell: bash
         run: |
-          set -e
-
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
+          git config --global --add safe.directory $GITHUB_WORKSPACE
           git submodule update --init --recursive
-
           chmod +x depends/config.guess depends/config.sub || true
-
-
-      # ======================================================================
-      # SDK CACHE
-      # ======================================================================
 
       - name: SDK cache
         if: ${{ matrix.sdk }}
@@ -571,11 +341,6 @@ jobs:
         with:
           path: ./depends/sdk-sources
           key: ${{ matrix.name }}-${{ env.CACHE_NAME }}-${{ hashFiles('.github/workflows/ci.yml') }}
-
-
-      # ======================================================================
-      # INSTALL MACOS SDK
-      # ======================================================================
 
       - name: Install SDK
         if: ${{ matrix.sdk }}
@@ -619,6 +384,10 @@ jobs:
             local url="$1"
             local file="$2"
 
+            echo "Downloading:"
+            echo "  $url"
+            echo "  -> $file"
+
             curl \
               --location \
               --fail \
@@ -630,41 +399,83 @@ jobs:
               -o "$file"
           }
 
+          # ==========================================================
+          # PRIMARY SDK
+          #
+          # Keep the original Dogecoin SDK as the first choice.
+          # ==========================================================
+          echo ""
+          echo "------------------------------------------------------------"
+          echo "Attempting PRIMARY SDK"
+          echo "------------------------------------------------------------"
+          echo "URL: $PRIMARY_URL"
+          echo "SHA256: $PRIMARY_SHA"
+
           PRIMARY_OK=false
 
           if verify_sha256 "$PRIMARY_FILE" "$PRIMARY_SHA"; then
+            echo "Primary SDK already exists and checksum is valid."
             PRIMARY_OK=true
           else
+            echo "Primary SDK is missing or checksum is invalid."
 
             rm -f "$PRIMARY_FILE"
 
             if download_file "$PRIMARY_URL" "$PRIMARY_FILE"; then
-
               if verify_sha256 "$PRIMARY_FILE" "$PRIMARY_SHA"; then
+                echo "Primary SDK downloaded and checksum verified."
                 PRIMARY_OK=true
               else
+                echo "Primary SDK downloaded but checksum verification FAILED."
                 rm -f "$PRIMARY_FILE"
               fi
-
+            else
+              echo "Primary SDK download FAILED."
             fi
-
           fi
 
+          # ==========================================================
+          # FALLBACK SDK
+          #
+          # Only used when the original SDK cannot be obtained or
+          # cannot pass its checksum verification.
+          #
+          # IMPORTANT:
+          # This fallback is still MacOSX10.11.sdk, supplied as .tar.xz.
+          # ==========================================================
           if [[ "$PRIMARY_OK" != "true" ]]; then
 
+            echo ""
+            echo "============================================================"
+            echo "PRIMARY SDK UNAVAILABLE"
+            echo "Switching to FALLBACK SDK"
+            echo "============================================================"
+            echo "URL: $FALLBACK_URL"
+            echo "SHA256: $FALLBACK_SHA"
+
             if [[ -z "$FALLBACK_FILE" || -z "$FALLBACK_URL" || -z "$FALLBACK_SHA" ]]; then
-              echo "ERROR: No fallback SDK configured."
+              echo "ERROR: No fallback SDK is configured for this build."
               exit 1
             fi
 
-            if ! verify_sha256 "$FALLBACK_FILE" "$FALLBACK_SHA"; then
+            if verify_sha256 "$FALLBACK_FILE" "$FALLBACK_SHA"; then
+              echo "Fallback SDK already exists and checksum is valid."
+            else
+              echo "Fallback SDK is missing or checksum is invalid."
 
               rm -f "$FALLBACK_FILE"
 
-              download_file "$FALLBACK_URL" "$FALLBACK_FILE"
+              if ! download_file "$FALLBACK_URL" "$FALLBACK_FILE"; then
+                echo "ERROR: Fallback SDK download FAILED."
+                exit 1
+              fi
 
-              verify_sha256 "$FALLBACK_FILE" "$FALLBACK_SHA"
+              if ! verify_sha256 "$FALLBACK_FILE" "$FALLBACK_SHA"; then
+                echo "ERROR: Fallback SDK checksum verification FAILED."
+                exit 1
+              fi
 
+              echo "Fallback SDK downloaded and checksum verified."
             fi
 
             SDK_FILE="$FALLBACK_FILE"
@@ -675,30 +486,29 @@ jobs:
 
           fi
 
+          echo ""
+          echo "============================================================"
+          echo "SDK selected:"
+          echo "$SDK_FILE"
+          echo "============================================================"
+
           cd ../..
 
           rm -rf depends/SDKs/*
 
           tar -C depends/SDKs -xf "depends/sdk-sources/$SDK_FILE"
 
-
-      # ======================================================================
-      # BUILD DEPENDS
-      # ======================================================================
+          echo ""
+          echo "SDK extraction complete."
 
       - name: Build depends
-        shell: bash
         run: |
-          set -e
-
           export CONFIG_SHELL=/bin/bash
           export SHELL=/bin/bash
 
-          # --------------------------------------------------------------
-          # Native Apple Silicon macOS
-          # --------------------------------------------------------------
-
           if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
+
+            echo "Configuring native macOS ARM build environment"
 
             export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
             export MACOSX_DEPLOYMENT_TARGET=11.0
@@ -707,6 +517,7 @@ jobs:
             export CXX="$(xcrun --find clang++)"
 
             export HOMEBREW_PREFIX=$(brew --prefix)
+
             export PATH="$HOMEBREW_PREFIX/bin:$PATH"
 
             export PYTHON="$HOMEBREW_PREFIX/bin/python3"
@@ -714,18 +525,19 @@ jobs:
 
             export PIP_BREAK_SYSTEM_PACKAGES=1
 
+            export CONFIG_SHELL=/bin/bash
+            export SHELL=/bin/bash
+
             echo "Using Python:"
             $PYTHON --version
 
+            echo "Using:"
             echo "SDKROOT=$SDKROOT"
             echo "CC=$CC"
             echo "CXX=$CXX"
+            echo "OPENSSL_TARGET=$OPENSSL_TARGET"
 
-            $PYTHON -m pip install \
-              --user \
-              --upgrade \
-              ez_setup \
-              --break-system-packages || true
+            $PYTHON -m pip install --user --upgrade ez_setup --break-system-packages || true
 
             $PYTHON -c "import setuptools; print('setuptools OK')"
 
@@ -736,53 +548,10 @@ jobs:
 
           fi
 
-
-          # --------------------------------------------------------------
-          # Android / Termux
-          # --------------------------------------------------------------
-
-          if [[ "${{ matrix.name }}" == "android-arm64" || "${{ matrix.name }}" == "android-x86_64" ]]; then
-
-            echo ""
-            echo "============================================================"
-            echo "Building MinersWorldCoin dependencies"
-            echo "Android / Termux"
-            echo "Target: ${{ matrix.name }}"
-            echo "Host:   ${{ matrix.host }}"
-            echo "============================================================"
-
-            export ANDROID_SDK="${ANDROID_SDK_ROOT}"
-            export ANDROID_NDK="${ANDROID_SDK_ROOT}/ndk/23.2.8568313"
-            export ANDROID_API_LEVEL="${{ matrix.android_api }}"
-            export ANDROID_TOOLCHAIN_BIN="${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin"
-
-            echo "ANDROID_SDK=${ANDROID_SDK}"
-            echo "ANDROID_NDK=${ANDROID_NDK}"
-            echo "ANDROID_API_LEVEL=${ANDROID_API_LEVEL}"
-            echo "ANDROID_TOOLCHAIN_BIN=${ANDROID_TOOLCHAIN_BIN}"
-
-            make $MAKEJOBS -C depends \
-              HOST=${{ matrix.host }} \
-              ANDROID_SDK="${ANDROID_SDK}" \
-              ANDROID_NDK="${ANDROID_NDK}" \
-              ANDROID_API_LEVEL="${ANDROID_API_LEVEL}" \
-              ANDROID_TOOLCHAIN_BIN="${ANDROID_TOOLCHAIN_BIN}" \
-              OPENSSL_TARGET="${OPENSSL_TARGET}" \
-              ${{ matrix.dep-opts }}
-
-          else
-
-            make $MAKEJOBS -C depends \
-              HOST=${{ matrix.host }} \
-              OPENSSL_TARGET="${OPENSSL_TARGET}" \
-              ${{ matrix.dep-opts }}
-
-          fi
-
-
-      # ======================================================================
-      # CCACHE
-      # ======================================================================
+          make $MAKEJOBS -C depends \
+            HOST=${{ matrix.host }} \
+            OPENSSL_TARGET=$OPENSSL_TARGET \
+            ${{ matrix.dep-opts }}
 
       - name: CCache
         uses: actions/cache@v4
@@ -792,282 +561,71 @@ jobs:
           path: ~/.ccache
           key: ${{ matrix.name }}-${{ env.CACHE_NAME }}-${{ hashFiles('**/configure.ac', '.github/workflows/ci.yml') }}
 
-
-      # ======================================================================
-      # BUILD MINERSWORLDCOIN
-      # ======================================================================
-
       - name: Build MinersWorldCoin
         env:
           GIT_COMMIT_ID: ${{ github.sha }}
-
-        shell: bash
-
         run: |
-          set -e
-
           chmod +x autogen.sh
           chmod -R +x depends || true
           chmod +x share/genbuild.sh
 
           SHORT_COMMIT=$(echo "$GIT_COMMIT_ID" | cut -c1-7)
 
-          depends/${{ matrix.host }}/native/bin/ccache \
-            --max-size=$CCACHE_SIZE
+          depends/${{ matrix.host }}/native/bin/ccache --max-size=$CCACHE_SIZE
 
           ./autogen.sh
-
           chmod +x configure || true
 
+          # Only the aarch64-macos leg needs an explicit sysroot.
+          # Intel macOS continues using the SDK selected by depends.
           SDKFLAGS=""
           EXTRA_LDFLAGS=""
 
-
-          # ==============================================================
-          # APPLE SILICON
-          # ==============================================================
-
           if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
-
             SDKFLAGS="-isysroot ${MACOS_SDK_PATH}"
             EXTRA_LDFLAGS="-L${MACOS_SDK_PATH}/usr/lib"
-
           fi
 
+          ./configure --prefix=`pwd`/depends/${{ matrix.host }} \
+            ${{ matrix.config-opts }} \
+            --enable-reduce-exports \
+            CFLAGS="$SDKFLAGS -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            CXXFLAGS="$SDKFLAGS -std=c++17 -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            LDFLAGS="$SDKFLAGS $EXTRA_LDFLAGS" \
+            || (cat config.log && false)
 
-          # ==============================================================
-          # ANDROID / TERMUX
-          # ==============================================================
-
-          if [[ "${{ matrix.name }}" == "android-arm64" || "${{ matrix.name }}" == "android-x86_64" ]]; then
-
-            export ANDROID_NDK="${ANDROID_SDK_ROOT}/ndk/23.2.8568313"
-            export ANDROID_API_LEVEL="${{ matrix.android_api }}"
-            export ANDROID_TOOLCHAIN_BIN="${ANDROID_NDK}/toolchains/llvm/prebuilt/linux-x86_64/bin"
-
-            # ----------------------------------------------------------
-            # Select Android compiler
-            # ----------------------------------------------------------
-
-            if [[ "${{ matrix.name }}" == "android-arm64" ]]; then
-
-              export CC="${ANDROID_TOOLCHAIN_BIN}/aarch64-linux-android${ANDROID_API_LEVEL}-clang"
-              export CXX="${ANDROID_TOOLCHAIN_BIN}/aarch64-linux-android${ANDROID_API_LEVEL}-clang++"
-
-            elif [[ "${{ matrix.name }}" == "android-x86_64" ]]; then
-
-              export CC="${ANDROID_TOOLCHAIN_BIN}/x86_64-linux-android${ANDROID_API_LEVEL}-clang"
-              export CXX="${ANDROID_TOOLCHAIN_BIN}/x86_64-linux-android${ANDROID_API_LEVEL}-clang++"
-
-            fi
-
-            export AR="${ANDROID_TOOLCHAIN_BIN}/llvm-ar"
-            export RANLIB="${ANDROID_TOOLCHAIN_BIN}/llvm-ranlib"
-            export STRIP="${ANDROID_TOOLCHAIN_BIN}/llvm-strip"
-
-            export CPPFLAGS="-I$(pwd)/depends/${{ matrix.host }}/include"
-
-            export LDFLAGS="-L$(pwd)/depends/${{ matrix.host }}/lib"
-
-            export LIBS="-llog -ldl -lm"
-
-            echo ""
-            echo "============================================================"
-            echo "Configuring MinersWorldCoin"
-            echo "Android / Termux"
-            echo "============================================================"
-
-            echo "Target:      ${{ matrix.name }}"
-            echo "Host:        ${{ matrix.host }}"
-            echo "CC:          $CC"
-            echo "CXX:         $CXX"
-            echo "AR:          $AR"
-            echo "RANLIB:      $RANLIB"
-            echo "STRIP:       $STRIP"
-            echo "API:         $ANDROID_API_LEVEL"
-            echo "CPPFLAGS:    $CPPFLAGS"
-            echo "LDFLAGS:     $LDFLAGS"
-
-            ./configure \
-              --build=x86_64-pc-linux-gnu \
-              --host=${{ matrix.host }} \
-              --prefix="$(pwd)/depends/${{ matrix.host }}" \
-              ${{ matrix.config-opts }} \
-              --enable-reduce-exports \
-              CC="$CC" \
-              CXX="$CXX" \
-              AR="$AR" \
-              RANLIB="$RANLIB" \
-              STRIP="$STRIP" \
-              CFLAGS="-O2 -fPIE -fPIC -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-              CXXFLAGS="-std=c++17 -O2 -fPIE -fPIC -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-              CPPFLAGS="$CPPFLAGS" \
-              LDFLAGS="$LDFLAGS -fPIE -pie" \
-              LIBS="$LIBS" \
-              || (
-                echo ""
-                echo "============================================================"
-                echo "CONFIGURE FAILED"
-                echo "============================================================"
-                cat config.log
-                exit 1
-              )
-
-            make $MAKEJOBS ${{ matrix.goal }} \
-              CXXFLAGS="-std=c++17 -O2 -fPIE -fPIC" \
-              || (
-                echo ""
-                echo "============================================================"
-                echo "Android / Termux build failure"
-                echo "Verbose build follows"
-                echo "============================================================"
-
-                make ${{ matrix.goal }} \
-                  CXXFLAGS="-std=c++17 -O2 -fPIE -fPIC" \
-                  V=1
-
-                exit 1
-              )
-
-            echo ""
-            echo "============================================================"
-            echo "Android / Termux binaries"
-            echo "============================================================"
-
-            find "depends/${{ matrix.host }}/bin" \
-              -maxdepth 1 \
-              -type f \
-              -print \
-              -exec file {} \; || true
-
-            # ----------------------------------------------------------
-            # Strip the Android executables.
-            # ----------------------------------------------------------
-
-            for binary in \
-              "depends/${{ matrix.host }}/bin/minersworldcoind" \
-              "depends/${{ matrix.host }}/bin/minersworldcoin-cli" \
-              "depends/${{ matrix.host }}/bin/minersworldcoin-tx"
-            do
-
-              if [[ -f "$binary" ]]; then
-
-                echo "Stripping: $binary"
-
-                "${STRIP}" \
-                  --strip-debug \
-                  --strip-unneeded \
-                  "$binary" || true
-
-              fi
-
-            done
-
-            echo ""
-            echo "Final Android / Termux binaries:"
-
-            find "depends/${{ matrix.host }}/bin" \
-              -maxdepth 1 \
-              -type f \
-              -print \
-              -exec file {} \;
-
-          else
-
-            # ============================================================
-            # NORMAL LINUX / WINDOWS / MACOS
-            # ============================================================
-
-            ./configure \
-              --prefix="$(pwd)/depends/${{ matrix.host }}" \
-              ${{ matrix.config-opts }} \
-              --enable-reduce-exports \
-              CFLAGS="$SDKFLAGS -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-              CXXFLAGS="$SDKFLAGS -std=c++17 -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-              LDFLAGS="$SDKFLAGS $EXTRA_LDFLAGS" \
-              || (
-                echo "Configure failed."
-                cat config.log
-                exit 1
-              )
-
-            make $MAKEJOBS ${{ matrix.goal }} \
-              CXXFLAGS="-std=c++17 $SDKFLAGS" \
-              || (
-                echo ""
-                echo "============================================================"
-                echo "Build failure. Verbose build follows."
-                echo "============================================================"
-
-                make ${{ matrix.goal }} \
-                  CXXFLAGS="-std=c++17 $SDKFLAGS" \
-                  V=1
-
-                exit 1
-              )
-
-          fi
-
-
-      # ======================================================================
-      # BENCHMARK
-      # ======================================================================
+          make $MAKEJOBS ${{ matrix.goal }} \
+            CXXFLAGS="-std=c++17 $SDKFLAGS" \
+            || (
+              echo "Build failure. Verbose build follows."
+              make ${{ matrix.goal }} CXXFLAGS="-std=c++17 $SDKFLAGS" V=1
+              false
+            )
 
       - name: Run benchmark
         if: ${{ matrix.run-bench }}
-        shell: bash
         run: |
-          set -e
-
-          src/bench/bench_minersworldcoin \
-            > "${{ matrix.name }}-bench.csv"
-
-          cat "${{ matrix.name }}-bench.csv"
-
-
-      # ======================================================================
-      # SECURITY CHECK
-      # ======================================================================
+          src/bench/bench_minersworldcoin > ${{ matrix.name }}-bench.csv
+          cat ${{ matrix.name }}-bench.csv
 
       - name: Fix permissions for security-check.py
         run: chmod +x contrib/devtools/security-check.py
-
 
       - name: Check security
         if: ${{ matrix.check-security }}
         run: make -C src check-security
 
-
-      # ======================================================================
-      # SYMBOL CHECK
-      # ======================================================================
-
       - name: Check symbols
         if: ${{ matrix.check-symbols }}
         run: make -C src check-symbols
 
-
-      # ======================================================================
-      # CLEANUP
-      # ======================================================================
-
       - name: Cleanup qa artifacts
         run: rm -rf qa/cache || true
-
-
-      # ======================================================================
-      # UPLOAD ARTIFACTS
-      #
-      # KEEPING YOUR EXISTING MWC BUNDLING.
-      #
-      # We are NOT changing this to upload only the daemon.
-      # ======================================================================
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: minersworldcoin-${{ github.sha }}-${{ matrix.name }}
-
           path: |
             depends/${{ matrix.host }}/bin/minersworldcoin*
             depends/${{ matrix.host }}/lib/libbitcoinconsensus*
