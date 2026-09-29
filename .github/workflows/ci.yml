@@ -41,8 +41,7 @@ jobs:
           - x86_64-macos
           - aarch64-macos
           - x86_64-win
-          - android-arm64
-          - android-x86_64
+          
 
         include:
           - name: i686-linux
