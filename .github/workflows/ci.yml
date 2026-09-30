@@ -1,4 +1,3 @@
-
 name: Continuous Integration
 
 on:
@@ -29,6 +28,7 @@ jobs:
 
     strategy:
       fail-fast: false
+
       matrix:
         name:
           - aarch64-linux
@@ -44,6 +44,10 @@ jobs:
           - x86_64-win
 
         include:
+
+          # ============================================================
+          # i686 Linux
+          # ============================================================
           - name: i686-linux
             host: i686-pc-linux-gnu
             container: ubuntu:20.04
@@ -55,6 +59,9 @@ jobs:
             config-opts: "--enable-zmq --enable-glibc-back-compat --with-gui=qt5 LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
 
+          # ============================================================
+          # ARMHF Linux
+          # ============================================================
           - name: armhf-linux
             host: arm-linux-gnueabihf
             container: ubuntu:20.04
@@ -66,6 +73,9 @@ jobs:
             config-opts: "--enable-glibc-back-compat LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
 
+          # ============================================================
+          # ARMv7 Linux
+          # ============================================================
           - name: armv7-linux
             host: arm-linux-gnueabihf
             container: ubuntu:20.04
@@ -74,6 +84,9 @@ jobs:
             config-opts: "--disable-tests --without-gui"
             goal: install
 
+          # ============================================================
+          # AArch64 Linux
+          # ============================================================
           - name: aarch64-linux
             host: aarch64-linux-gnu
             container: ubuntu:20.04
@@ -85,6 +98,9 @@ jobs:
             config-opts: "--enable-zmq --enable-glibc-back-compat LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
 
+          # ============================================================
+          # x86_64 Linux
+          # ============================================================
           - name: x86_64-linux
             host: x86_64-unknown-linux-gnu
             container: ubuntu:20.04
@@ -96,6 +112,13 @@ jobs:
             config-opts: "--enable-zmq --enable-glibc-back-compat --with-gui=qt5 LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
 
+          # ============================================================
+          # x86_64 Linux MUSL
+          #
+          # IMPORTANT:
+          # Keep this as Alpine.
+          # Do not run Ubuntu/bash-specific configuration against it.
+          # ============================================================
           - name: x86_64-linux-musl
             host: x86_64-linux-musl
             container: alpine:3.19
@@ -104,6 +127,9 @@ jobs:
             config-opts: "--disable-tests --without-gui CXXFLAGS=-Wno-deprecated-declarations"
             goal: install
 
+          # ============================================================
+          # RISC-V 64 Linux
+          # ============================================================
           - name: riscv64-linux
             host: riscv64-linux-gnu
             container: ubuntu:20.04
@@ -112,6 +138,9 @@ jobs:
             config-opts: "--disable-tests"
             goal: install
 
+          # ============================================================
+          # i686 Windows
+          # ============================================================
           - name: i686-win
             host: i686-w64-mingw32
             container: ubuntu:20.04
@@ -132,6 +161,9 @@ jobs:
             config-opts: "--with-gui=qt5 --disable-tests"
             goal: install
 
+          # ============================================================
+          # x86_64 Windows
+          # ============================================================
           - name: x86_64-win
             host: x86_64-w64-mingw32
             container: ubuntu:20.04
@@ -153,13 +185,12 @@ jobs:
           # ============================================================
           # Intel macOS
           #
-          # PRIMARY SDK:
-          #   Dogecoin Core's existing MacOSX10.11.sdk.tar.gz
+          # EXISTING / ORIGINAL BUILD
           #
-          # FALLBACK SDK:
-          #   Phracker MacOSX10.11.sdk.tar.xz
+          # This remains a Linux cross-build and continues to use the
+          # original Dogecoin MacOSX10.11 SDK first.
           #
-          # The original SDK remains the first choice.
+          # Fallback remains the Phracker SDK.
           # ============================================================
           - name: x86_64-macos
             host: x86_64-apple-darwin11
@@ -172,11 +203,13 @@ jobs:
             config-opts: "--with-gui=qt5 --disable-tests"
             goal: deploy
 
+            # ORIGINAL PRIMARY SDK
             sdk: 10.11
             sdk-url: "https://depends.dogecoincore.org"
             sdk-filename: "MacOSX10.11.sdk.tar.gz"
             sdk-shasum: "bec9d089ebf2e2dd59b1a811a38ec78ebd5da18cbbcd6ab39d1e59f64ac5033f"
 
+            # ORIGINAL FALLBACK SDK
             sdk-fallback-url: "https://github.com/phracker/MacOSX-SDKs/releases/download/11.3"
             sdk-fallback-filename: "MacOSX10.11.sdk.tar.xz"
             sdk-fallback-shasum: "d080fc672d94f95eb54651c37ede80f61761ce4c91f87061e11a20222c8d00c8"
@@ -184,52 +217,60 @@ jobs:
           # ============================================================
           # Apple Silicon macOS
           #
-          # IMPORTANT:
-          # This is a native ARM64 macOS build.
+          # COMPLETELY SEPARATE NATIVE BUILD
           #
-          # Do NOT use the Intel/cross-compile SDK machinery here.
-          # GitHub's macos-14 runner already provides the correct native
-          # Apple Silicon SDK and compiler.
+          # This DOES NOT use the Linux container.
+          # This DOES NOT use the Intel SDK.
+          # This DOES NOT run the depends SDK download step.
           #
-          # The host triplet is detected dynamically from config.guess
-          # during the build instead of forcing an old darwin21 target.
+          # macOS provides the correct native ARM64 SDK through Xcode.
           # ============================================================
           - name: aarch64-macos
+            host: aarch64-apple-darwin
             runs-on: macos-14
-            container: ""
+
+            # No container here.
+            # This is intentional.
+
             packages: ""
             run-bench: false
             check-security: true
             check-symbols: false
-            dep-opts: "WITH_OPENSSL=1"
+
+            dep-opts: ""
             config-opts: "--with-gui=qt5 --disable-tests"
+
             goal: deploy
-            native-macos: true
 
     runs-on: ${{ matrix.runs-on || 'ubuntu-22.04' }}
 
+    # IMPORTANT:
+    # Native macOS ARM must NOT receive a Linux container.
     container:
       image: ${{ matrix.container }}
       options: ${{ matrix.container-options == '' && '-e 1MWC=1MWC' || matrix.container-options }}
 
     steps:
 
-      # ================================================================
-      # Linux container setup
-      # ================================================================
+      # ============================================================
+      # Linux container configuration
+      #
+      # Native macOS ARM deliberately skips this.
+      # ============================================================
       - name: Configure container (Linux only)
         if: ${{ matrix.container && matrix.name != 'aarch64-macos' }}
+        shell: bash
         run: |
           ln -snf /usr/share/zoneinfo/Etc/UTC /etc/localtime || true
           echo Etc/UTC > /etc/timezone || true
-          mkdir -p $WINEPREFIX || true
+          mkdir -p "$WINEPREFIX" || true
           uname -a
 
-      # ================================================================
-      # Native macOS setup
-      # ================================================================
+      # ============================================================
+      # Native macOS configuration
+      # ============================================================
       - name: Configure macOS runner
-        if: ${{ matrix.native-macos }}
+        if: ${{ matrix.name == 'aarch64-macos' }}
         shell: bash
         run: |
           set -e
@@ -239,56 +280,59 @@ jobs:
           echo "============================================================"
 
           uname -a
-          uname -m
+
+          echo ""
+          echo "macOS:"
+          sw_vers
 
           echo ""
           echo "Xcode:"
-          xcode-select -p
           xcodebuild -version
+
+          echo ""
+          echo "Developer directory:"
+          xcode-select -p
 
           echo ""
           echo "Clang:"
           clang --version
-          clang++ --version
-
-          echo ""
-          echo "Native SDK:"
-          export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
-          echo "SDKROOT=$SDKROOT"
-
-          xcrun --sdk macosx --show-sdk-version
 
           echo ""
           echo "Architecture:"
           arch
 
-          if [[ "$(uname -m)" != "arm64" ]]; then
-            echo "ERROR: aarch64-macos is not running on an ARM64 runner."
-            exit 1
-          fi
+          echo ""
+          echo "Native SDK:"
+          xcrun --sdk macosx --show-sdk-path
 
           echo ""
-          echo "Native ARM64 macOS runner confirmed."
+          echo "SDK version:"
+          xcrun --sdk macosx --show-sdk-version
 
-      # ================================================================
-      # Pre install
-      # ================================================================
+      # ============================================================
+      # Pre-install
+      # ============================================================
       - name: Pre install
         if: ${{ matrix.preinstall }}
+        shell: bash
         run: ${{ matrix.preinstall }}
 
-      # ================================================================
+      # ============================================================
       # Install packages
-      # ================================================================
+      #
+      # Native macOS ARM gets ONLY Homebrew dependencies.
+      #
+      # Linux containers retain the original apt/apk behaviour.
+      # ============================================================
       - name: Install packages
         shell: bash
         run: |
           set -e
 
-          if [[ "${{ matrix.native-macos }}" == "true" ]]; then
+          if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
 
             echo "============================================================"
-            echo "Installing native macOS build dependencies"
+            echo "Installing native macOS ARM dependencies"
             echo "============================================================"
 
             brew update || true
@@ -306,24 +350,21 @@ jobs:
               librsvg \
               python
 
-            echo "$(brew --prefix python)/bin" >> "$GITHUB_PATH"
+            BREW_PYTHON="$(brew --prefix python)/bin"
 
-            export PATH="$(brew --prefix python)/bin:$PATH"
+            echo "$BREW_PYTHON" >> "$GITHUB_PATH"
+
+            export PATH="$BREW_PYTHON:$PATH"
             export PIP_BREAK_SYSTEM_PACKAGES=1
 
-            python3 -m pip install \
-              --user \
-              --upgrade \
+            python3 -m pip install --user --upgrade \
               pip \
               setuptools \
               wheel \
               virtualenv \
               --break-system-packages
 
-            python3 -m pip install \
-              --user \
-              lief \
-              --break-system-packages || true
+            python3 -m pip install --user lief --break-system-packages || true
 
             echo ""
             echo "Python:"
@@ -334,11 +375,11 @@ jobs:
             echo "setuptools:"
             python3 -c "import setuptools; print(setuptools.__version__)"
 
-            echo ""
-            echo "Homebrew:"
-            brew --prefix
+          elif command -v apt-get >/dev/null 2>&1; then
 
-          elif command -v apt-get >/dev/null; then
+            echo "============================================================"
+            echo "Installing Debian/Ubuntu dependencies"
+            echo "============================================================"
 
             apt-get update
 
@@ -366,7 +407,11 @@ jobs:
 
             apt-get install -y ${{ matrix.packages }}
 
-          else
+          elif command -v apk >/dev/null 2>&1; then
+
+            echo "============================================================"
+            echo "Installing Alpine dependencies"
+            echo "============================================================"
 
             apk add --no-cache \
               build-base \
@@ -382,30 +427,43 @@ jobs:
               libtool \
               pkgconfig
 
+          else
+
+            echo "ERROR: Unsupported build environment."
+            exit 1
+
           fi
 
-          python3 -m ensurepip --upgrade || true
-          python3 -m pip install --upgrade pip setuptools wheel || true
-          python3 -m pip install lief || true
+          # ----------------------------------------------------------
+          # Python setup
+          #
+          # Skip the Linux-only ensurepip path on native macOS.
+          # ----------------------------------------------------------
+          if [[ "${{ matrix.name }}" != "aarch64-macos" ]]; then
+            python3 -m ensurepip --upgrade || true
+            python3 -m pip install --upgrade pip setuptools wheel || true
+            python3 -m pip install lief || true
+          fi
 
-      # ================================================================
+      # ============================================================
       # Post install
-      # ================================================================
+      # ============================================================
       - name: Post install
         if: ${{ matrix.postinstall }}
+        shell: bash
         run: ${{ matrix.postinstall }}
 
-      # ================================================================
+      # ============================================================
       # Checkout
-      # ================================================================
+      # ============================================================
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ================================================================
+      # ============================================================
       # Submodules
-      # ================================================================
+      # ============================================================
       - name: Fix permissions and init submodules
         shell: bash
         run: |
@@ -413,12 +471,13 @@ jobs:
           git submodule update --init --recursive
           chmod +x depends/config.guess depends/config.sub || true
 
-      # ================================================================
+      # ============================================================
       # SDK cache
       #
-      # Only Intel macOS uses the downloaded legacy SDK.
-      # Native Apple Silicon uses the runner SDK directly.
-      # ================================================================
+      # ONLY Intel macOS has matrix.sdk.
+      #
+      # Native Apple Silicon deliberately does not enter this step.
+      # ============================================================
       - name: SDK cache
         if: ${{ matrix.sdk }}
         uses: actions/cache@v4
@@ -428,9 +487,12 @@ jobs:
           path: ./depends/sdk-sources
           key: ${{ matrix.name }}-${{ env.CACHE_NAME }}-${{ hashFiles('.github/workflows/ci.yml') }}
 
-      # ================================================================
-      # Install legacy Intel macOS SDK
-      # ================================================================
+      # ============================================================
+      # Install Intel macOS SDK
+      #
+      # This is your original SDK logic.
+      # Native ARM does not execute this step.
+      # ============================================================
       - name: Install SDK
         if: ${{ matrix.sdk }}
         shell: bash
@@ -451,7 +513,7 @@ jobs:
           FALLBACK_SHA="${{ matrix.sdk-fallback-shasum }}"
 
           echo "============================================================"
-          echo "Installing legacy SDK for ${{ matrix.name }}"
+          echo "Installing SDK for ${{ matrix.name }}"
           echo "============================================================"
 
           verify_sha256() {
@@ -492,7 +554,6 @@ jobs:
           echo "------------------------------------------------------------"
           echo "Attempting PRIMARY SDK"
           echo "------------------------------------------------------------"
-
           echo "URL: $PRIMARY_URL"
           echo "SHA256: $PRIMARY_SHA"
 
@@ -578,9 +639,18 @@ jobs:
           echo ""
           echo "SDK extraction complete."
 
-      # ================================================================
+      # ============================================================
       # Build depends
-      # ================================================================
+      #
+      # Intel macOS:
+      #   Existing cross-compile / SDK behaviour.
+      #
+      # Apple Silicon:
+      #   Native macOS build.
+      #
+      # MUSL:
+      #   Remains untouched and runs inside Alpine.
+      # ============================================================
       - name: Build depends
         shell: bash
         run: |
@@ -589,10 +659,10 @@ jobs:
           export CONFIG_SHELL=/bin/bash
           export SHELL=/bin/bash
 
-          if [[ "${{ matrix.native-macos }}" == "true" ]]; then
+          if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
 
             echo "============================================================"
-            echo "Configuring native Apple Silicon depends"
+            echo "Configuring native Apple Silicon macOS build"
             echo "============================================================"
 
             export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
@@ -609,48 +679,32 @@ jobs:
 
             export PIP_BREAK_SYSTEM_PACKAGES=1
 
-            echo ""
-            echo "Native macOS configuration:"
-            echo "  Architecture: $(uname -m)"
-            echo "  SDKROOT: $SDKROOT"
-            echo "  SDK version: $(xcrun --sdk macosx --show-sdk-version)"
-            echo "  CC: $CC"
-            echo "  CXX: $CXX"
-            echo "  Python: $PYTHON"
-            echo "  Deployment target: $MACOSX_DEPLOYMENT_TARGET"
-
-            if [[ "$(uname -m)" != "arm64" ]]; then
-              echo "ERROR: Expected arm64 runner."
-              exit 1
-            fi
+            echo "Python:"
+            "$PYTHON" --version
 
             echo ""
-            echo "Using native ARM64 compiler:"
-            "$CC" --version
+            echo "SDKROOT=$SDKROOT"
+            echo "CC=$CC"
+            echo "CXX=$CXX"
+            echo "MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET"
 
-            echo ""
-            echo "Installing Python compatibility helpers..."
-
-            "$PYTHON" -m pip install \
-              --user \
-              --upgrade \
-              ez_setup \
+            "$PYTHON" -m pip install --user \
+              --upgrade ez_setup \
               --break-system-packages || true
 
             "$PYTHON" -c "import setuptools; print('setuptools OK')"
 
-            echo ""
-            echo "Writing macOS environment to GITHUB_ENV..."
-
             echo "MACOS_SDK_PATH=$SDKROOT" >> "$GITHUB_ENV"
-            echo "MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET" >> "$GITHUB_ENV"
+            echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> "$GITHUB_ENV"
 
-            echo ""
-            echo "Running native ARM64 depends build..."
-
+            # --------------------------------------------------------
+            # Native ARM64 depends build.
+            #
+            # Do not pass the Intel host triple.
+            # --------------------------------------------------------
             make $MAKEJOBS -C depends \
-              HOST="$(./depends/config.guess)" \
-              OPENSSL_TARGET="$OPENSSL_TARGET" \
+              HOST=arm64-apple-darwin \
+              OPENSSL_TARGET=$OPENSSL_TARGET \
               ${{ matrix.dep-opts }}
 
           else
@@ -662,9 +716,9 @@ jobs:
 
           fi
 
-      # ================================================================
+      # ============================================================
       # CCache
-      # ================================================================
+      # ============================================================
       - name: CCache
         uses: actions/cache@v4
         env:
@@ -673,9 +727,9 @@ jobs:
           path: ~/.ccache
           key: ${{ matrix.name }}-${{ env.CACHE_NAME }}-${{ hashFiles('**/configure.ac', '.github/workflows/ci.yml') }}
 
-      # ================================================================
+      # ============================================================
       # Build MinersWorldCoin
-      # ================================================================
+      # ============================================================
       - name: Build MinersWorldCoin
         env:
           GIT_COMMIT_ID: ${{ github.sha }}
@@ -689,17 +743,13 @@ jobs:
 
           SHORT_COMMIT=$(echo "$GIT_COMMIT_ID" | cut -c1-7)
 
-          # ------------------------------------------------------------
-          # Determine ccache location.
-          # ------------------------------------------------------------
-          if [[ "${{ matrix.native-macos }}" == "true" ]]; then
-            export PATH="$(brew --prefix ccache)/bin:$PATH"
-
-            if command -v ccache >/dev/null 2>&1; then
-              ccache --max-size="$CCACHE_SIZE"
-            fi
+          # ----------------------------------------------------------
+          # Native macOS ARM has its own ccache binary.
+          # ----------------------------------------------------------
+          if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
+            ccache --max-size="$CCACHE_SIZE"
           else
-            depends/${{ matrix.host }}/native/bin/ccache --max-size=$CCACHE_SIZE
+            depends/${{ matrix.host }}/native/bin/ccache --max-size="$CCACHE_SIZE"
           fi
 
           ./autogen.sh
@@ -708,127 +758,76 @@ jobs:
           SDKFLAGS=""
           EXTRA_LDFLAGS=""
 
-          if [[ "${{ matrix.native-macos }}" == "true" ]]; then
-
-            export SDKROOT="${MACOS_SDK_PATH:-$(xcrun --sdk macosx --show-sdk-path)}"
-            export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-11.0}"
-
-            SDKFLAGS="-isysroot ${SDKROOT}"
-            EXTRA_LDFLAGS="-L${SDKROOT}/usr/lib"
-
-            export CC="$(xcrun --find clang)"
-            export CXX="$(xcrun --find clang++)"
-
-            echo "============================================================"
-            echo "Native ARM64 configure environment"
-            echo "============================================================"
-
-            echo "CC=$CC"
-            echo "CXX=$CXX"
-            echo "SDKROOT=$SDKROOT"
-            echo "MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET"
-
-            echo ""
-            echo "Compiler target:"
-            "$CC" -dumpmachine || true
-
-            echo ""
-            echo "Compiler architecture:"
-            "$CC" -arch arm64 -E -x c /dev/null -o /dev/null
-
-            CONFIG_HOST="$(./depends/config.guess)"
-
-            echo ""
-            echo "Detected native host:"
-            echo "$CONFIG_HOST"
-
-            ./configure \
-              --prefix="$(pwd)/depends/${CONFIG_HOST}" \
-              ${{ matrix.config-opts }} \
-              --enable-reduce-exports \
-              --host="$CONFIG_HOST" \
-              CFLAGS="$SDKFLAGS -arch arm64 -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-              CXXFLAGS="$SDKFLAGS -arch arm64 -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} -std=c++17 -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-              LDFLAGS="$SDKFLAGS $EXTRA_LDFLAGS -arch arm64 -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}" \
-              || (
-                cat config.log
-                false
-              )
-
-            make $MAKEJOBS ${{ matrix.goal }} \
-              CFLAGS="$SDKFLAGS -arch arm64 -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}" \
-              CXXFLAGS="$SDKFLAGS -arch arm64 -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} -std=c++17" \
-              || (
-                echo "Build failure. Verbose build follows."
-
-                make ${{ matrix.goal }} \
-                  CFLAGS="$SDKFLAGS -arch arm64 -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}" \
-                  CXXFLAGS="$SDKFLAGS -arch arm64 -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} -std=c++17" \
-                  V=1
-
-                false
-              )
-
-          else
-
-            ./configure \
-              --prefix="$(pwd)/depends/${{ matrix.host }}" \
-              ${{ matrix.config-opts }} \
-              --enable-reduce-exports \
-              CFLAGS="$SDKFLAGS -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-              CXXFLAGS="$SDKFLAGS -std=c++17 -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-              LDFLAGS="$SDKFLAGS $EXTRA_LDFLAGS" \
-              || (
-                cat config.log
-                false
-              )
-
-            make $MAKEJOBS ${{ matrix.goal }} \
-              CXXFLAGS="-std=c++17 $SDKFLAGS" \
-              || (
-                echo "Build failure. Verbose build follows."
-
-                make ${{ matrix.goal }} \
-                  CXXFLAGS="-std=c++17 $SDKFLAGS" \
-                  V=1
-
-                false
-              )
-
+          if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
+            SDKFLAGS="-isysroot ${MACOS_SDK_PATH}"
+            EXTRA_LDFLAGS="-L${MACOS_SDK_PATH}/usr/lib"
           fi
 
-      # ================================================================
-      # Run benchmark
-      # ================================================================
+          ./configure \
+            --prefix="$(pwd)/depends/${{ matrix.host }}" \
+            ${{ matrix.config-opts }} \
+            --enable-reduce-exports \
+            CFLAGS="$SDKFLAGS -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            CXXFLAGS="$SDKFLAGS -std=c++17 -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            LDFLAGS="$SDKFLAGS $EXTRA_LDFLAGS" \
+            || (
+              echo "============================================================"
+              echo "configure failed; dumping config.log"
+              echo "============================================================"
+              cat config.log
+              false
+            )
+
+          make $MAKEJOBS ${{ matrix.goal }} \
+            CXXFLAGS="-std=c++17 $SDKFLAGS" \
+            || (
+              echo "Build failure. Verbose build follows."
+              make ${{ matrix.goal }} \
+                CXXFLAGS="-std=c++17 $SDKFLAGS" \
+                V=1
+              false
+            )
+
+      # ============================================================
+      # Benchmark
+      # ============================================================
       - name: Run benchmark
         if: ${{ matrix.run-bench }}
+        shell: bash
         run: |
           src/bench/bench_minersworldcoin > ${{ matrix.name }}-bench.csv
           cat ${{ matrix.name }}-bench.csv
 
-      # ================================================================
-      # Security checks
-      # ================================================================
+      # ============================================================
+      # Security check
+      # ============================================================
       - name: Fix permissions for security-check.py
+        shell: bash
         run: chmod +x contrib/devtools/security-check.py
 
       - name: Check security
         if: ${{ matrix.check-security }}
+        shell: bash
         run: make -C src check-security
 
+      # ============================================================
+      # Symbol check
+      # ============================================================
       - name: Check symbols
         if: ${{ matrix.check-symbols }}
+        shell: bash
         run: make -C src check-symbols
 
-      # ================================================================
+      # ============================================================
       # Cleanup
-      # ================================================================
+      # ============================================================
       - name: Cleanup qa artifacts
+        shell: bash
         run: rm -rf qa/cache || true
 
-      # ================================================================
+      # ============================================================
       # Upload artifacts
-      # ================================================================
+      # ============================================================
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
