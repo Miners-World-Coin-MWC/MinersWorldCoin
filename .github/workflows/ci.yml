@@ -206,7 +206,7 @@ jobs:
               LLVM_MINGW=llvm-mingw-20240619-ucrt-ubuntu-20.04-x86_64
               echo "Downloading ${LLVM_MINGW}..."
               curl -fL -sS --connect-timeout 20 --max-time 600 \
-                --retry 4 --retry-delay 5 --retry-all-errors \
+                --retry 4 --retry-delay 5 \
                 -o /tmp/llvm-mingw.tar.xz \
                 "https://github.com/mstorsjo/llvm-mingw/releases/download/20240619/${LLVM_MINGW}.tar.xz"
               ls -lh /tmp/llvm-mingw.tar.xz
@@ -264,30 +264,35 @@ jobs:
             sdk-fallback-shasum: "d080fc672d94f95eb54651c37ede80f61761ce4c91f87061e11a20222c8d00c8"
 
           # ============================================================
-          # Apple Silicon macOS
+          # Apple Silicon macOS (EXPERIMENTAL)
           #
           # COMPLETELY SEPARATE NATIVE BUILD
           #
           # This DOES NOT use the Linux container.
           # This DOES NOT use the Intel SDK.
-          # This DOES NOT run the depends SDK download step.
+          # This DOES NOT use the depends system: Dogecoin 1.14 depends
+          # only supports Darwin as a Linux cross-build (needs an SDK
+          # tarball + cctools; its config.sub rejects arm64; Qt 5.7 has
+          # no Apple Silicon support). Dependencies come from Homebrew.
           #
-          # macOS provides the correct native ARM64 SDK through Xcode.
+          # Daemon only for now: no Qt, no wallet. Add the GUI/wallet
+          # back once this builds cleanly.
+          #
+          # experimental: true => failure does NOT fail the workflow.
           # ============================================================
           - name: aarch64-macos
             host: aarch64-apple-darwin
-            # macos-14 is Homebrew Tier 3 (no bottles => everything builds
-            # from source, llvm alone took ~1h48m and x265 failed).
             runs-on: macos-15
+            experimental: true
             # No container here.
             # This is intentional.
             packages: ""
             run-bench: false
-            check-security: true
+            check-security: false
             check-symbols: false
             dep-opts: ""
-            config-opts: "--with-gui=qt5 --disable-tests"
-            goal: deploy
+            config-opts: "--without-gui --disable-wallet --disable-tests --disable-bench"
+            goal: install
 
     # Matrix entries marked `experimental: true` never fail the workflow.
     continue-on-error: ${{ matrix.experimental == true }}
@@ -407,16 +412,14 @@ jobs:
             export HOMEBREW_NO_INSTALL_CLEANUP=1
 
             brew install \
-              cmake \
-              imagemagick \
-              libtiff \
-              xorriso \
               autoconf \
               automake \
               libtool \
               pkg-config \
               ccache \
-              librsvg \
+              boost \
+              libevent \
+              openssl@3 \
               python
 
             BREW_PYTHON="$(brew --prefix python)/bin"
@@ -756,14 +759,10 @@ jobs:
             echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> "$GITHUB_ENV"
 
             # --------------------------------------------------------
-            # Native ARM64 depends build.
-            #
-            # Do not pass the Intel host triple.
+            # Native ARM64: no depends build. Libraries come from
+            # Homebrew (see "Build MinersWorldCoin" for the paths).
             # --------------------------------------------------------
-            make $MAKEJOBS -C depends \
-              HOST=arm64-apple-darwin \
-              OPENSSL_TARGET=$OPENSSL_TARGET \
-              ${{ matrix.dep-opts }}
+            echo "Skipping depends for native macOS ARM (using Homebrew)."
 
           else
 
@@ -815,15 +814,21 @@ jobs:
 
           SDKFLAGS=""
           EXTRA_LDFLAGS=""
+          BREW_CONFIG=""
 
           if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
-            SDKFLAGS="-isysroot ${MACOS_SDK_PATH}"
-            EXTRA_LDFLAGS="-L${MACOS_SDK_PATH}/usr/lib"
+            BP="$(brew --prefix)"
+            SSL="$(brew --prefix openssl@3)"
+            export PKG_CONFIG_PATH="$BP/lib/pkgconfig:$SSL/lib/pkgconfig:$PKG_CONFIG_PATH"
+            SDKFLAGS="-isysroot ${MACOS_SDK_PATH} -I$BP/include -I$SSL/include"
+            EXTRA_LDFLAGS="-L${MACOS_SDK_PATH}/usr/lib -L$BP/lib -L$SSL/lib"
+            BREW_CONFIG="--with-boost=$BP"
           fi
 
           ./configure \
             --prefix="$(pwd)/depends/${{ matrix.host }}" \
             ${{ matrix.config-opts }} \
+            $BREW_CONFIG \
             --enable-reduce-exports \
             CFLAGS="$SDKFLAGS -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
             CXXFLAGS="$SDKFLAGS -std=c++17 -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
@@ -986,6 +991,12 @@ jobs:
               esac
             done
           }
+
+          # autogen.sh calls `which`, which the Termux image doesn't ship.
+          if ! command -v which >/dev/null 2>&1; then
+            printf '#!%s/bin/sh\nfor c in "$@"; do command -v "$c" || exit 1; done\n' "$PREFIX" > "$PREFIX/bin/which"
+            chmod +x "$PREFIX/bin/which"
+          fi
 
           fix_shebangs
           bash ./autogen.sh
