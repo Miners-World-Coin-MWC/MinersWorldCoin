@@ -777,6 +777,16 @@ jobs:
             echo "MACOS_SDK_PATH=$SDKROOT" >> "$GITHUB_ENV"
             echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> "$GITHUB_ENV"
 
+            # zlib 1.2.12 does `#define fdopen(fd,mode) NULL` when
+            # TARGET_OS_MAC is defined, which breaks <stdio.h>. On the
+            # macOS 15 SDK (Xcode 16) TARGET_OS_MAC is visible early (libc
+            # headers pull in TargetConditionals.h); macos-14's SDK did not.
+            # zlib skips its own define if `fdopen` is already a macro, so
+            # pre-define it. CCC_OVERRIDE_OPTIONS makes clang append this
+            # flag to every compile in the depends build, with no change to
+            # depends/packages. (Permanent fix: bump zlib in depends.)
+            export CCC_OVERRIDE_OPTIONS="+-Dfdopen=fdopen"
+
             # --------------------------------------------------------
             # Native ARM64 runner, but depends build is the ORIGINAL
             # working one (HOST=aarch64-apple-darwin21).
@@ -843,15 +853,15 @@ jobs:
             --enable-reduce-exports \
             CFLAGS="$SDKFLAGS -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
             CXXFLAGS="$SDKFLAGS -std=$CXXSTD -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-            LDFLAGS="$SDKFLAGS $EXTRA_LDFLAGS" \
+            LDFLAGS="$SDKFLAGS $EXTRA_LDFLAGS" 2>&1 | tee configure.console \
             || (
               echo "============================================================"
-              echo "configure failed; dumping config.log"
+              echo "configure FAILED. Last 40 lines of configure output:"
               echo "============================================================"
-              cat config.log
+              tail -n 40 configure.console
               echo "============================================================"
-              echo "configure errors:"
-              grep -n 'configure: error' config.log || true
+              echo "error lines from config.log:"
+              grep -nE 'configure:[0-9]+: error:|^configure: error:' config.log || true
               false
             )
 
@@ -986,9 +996,9 @@ jobs:
             build-essential autoconf automake libtool pkg-config \
             autotools-dev bsdmainutils python3 curl ca-certificates bzip2
 
-      - name: Cache Android dependencies
+      - name: Restore Android dependencies cache
         id: deps-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: android-deps
           key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v1
@@ -1063,15 +1073,20 @@ jobs:
           (
             cd db-4.8.30.NC
             # clang: avoid the __atomic_compare_exchange name clash.
-            sed -i 's/__atomic_compare_exchange/__atomic_compare_exchange_db/g' src/dbinc/atomic.h
+            # (4.8.x keeps this at dbinc/atomic.h; src/dbinc is a 5.x layout.)
+            sed -i 's/__atomic_compare_exchange/__atomic_compare_exchange_db/g' dbinc/atomic.h
             # BDB ships a 2008 config.sub that rejects "android".
             cp /usr/share/misc/config.sub /usr/share/misc/config.guess dist/
             cd build_unix
+            # -std=c++11: BDB 4.8 uses throw() specs, illegal in C++17.
+            # -Wno-error=...: modern clang makes old-style C hard errors.
             ../dist/configure \
               --host="${TARGET}" --build=x86_64-pc-linux-gnu \
               --prefix="$P" \
               --enable-cxx --disable-shared --with-pic \
-              --with-mutex=POSIX/pthreads
+              --with-mutex=POSIX/pthreads \
+              CFLAGS="-O2 -fPIC -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=incompatible-pointer-types" \
+              CXXFLAGS="-std=c++11 -O2 -fPIC"
             make ${MAKEJOBS} libdb_cxx-4.8.a libdb-4.8.a
             make install_lib install_include
           )
@@ -1102,6 +1117,15 @@ jobs:
           echo "Dependency prefix contents"
           echo "============================================================"
           ls -lh "$P/lib" "$P/include" | head -n 80
+
+      # Saved immediately (not at job end) so a later wallet-build failure
+      # does not throw away the dependency build.
+      - name: Save Android dependencies cache
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: android-deps
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v1
 
       - name: Build MinersWorldCoin for Android ARM64
         shell: bash
@@ -1145,15 +1169,15 @@ jobs:
             CPPFLAGS="-I$P/include" \
             CFLAGS="-O2 -pipe -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
             CXXFLAGS="-std=c++14 -O2 -pipe -Wno-deprecated-declarations -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-            LDFLAGS="-L$P/lib -static-libstdc++" \
+            LDFLAGS="-L$P/lib -static-libstdc++" 2>&1 | tee configure.console \
             || (
               echo "============================================================"
-              echo "configure failed; dumping config.log"
+              echo "configure FAILED. Last 40 lines of configure output:"
               echo "============================================================"
-              cat config.log
+              tail -n 40 configure.console
               echo "============================================================"
-              echo "configure errors:"
-              grep -n 'configure: error' config.log || true
+              echo "error lines from config.log:"
+              grep -nE 'configure:[0-9]+: error:|^configure: error:' config.log || true
               false
             )
 
