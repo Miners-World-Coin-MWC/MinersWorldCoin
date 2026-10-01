@@ -415,8 +415,6 @@ jobs:
             echo "Installing native macOS ARM dependencies"
             echo "============================================================"
 
-            # Don't upgrade already-installed deps (avoids pointless
-            # rebuilds and the openssl@3 link conflict) or auto-update.
             export HOMEBREW_NO_INSTALL_UPGRADE=1
             export HOMEBREW_NO_AUTO_UPDATE=1
             export HOMEBREW_NO_INSTALL_CLEANUP=1
@@ -516,11 +514,6 @@ jobs:
             exit 1
           fi
 
-          # ----------------------------------------------------------
-          # Python setup
-          #
-          # Skip the Linux-only ensurepip path on native macOS.
-          # ----------------------------------------------------------
           if [[ "${{ matrix.name }}" != "aarch64-macos" ]]; then
             python3 -m ensurepip --upgrade || true
             python3 -m pip install --upgrade pip setuptools wheel || true
@@ -556,10 +549,6 @@ jobs:
 
       # ============================================================
       # SDK cache
-      #
-      # ONLY Intel macOS has matrix.sdk.
-      #
-      # Native Apple Silicon deliberately does not enter this step.
       # ============================================================
       - name: SDK cache
         if: ${{ matrix.sdk }}
@@ -572,9 +561,6 @@ jobs:
 
       # ============================================================
       # Install Intel macOS SDK
-      #
-      # This is your original SDK logic.
-      # Native ARM does not execute this step.
       # ============================================================
       - name: Install SDK
         if: ${{ matrix.sdk }}
@@ -601,8 +587,6 @@ jobs:
 
           verify_sha256() {
             local file="$1"
-            # Normalise to lowercase: sha256sum/shasum print lowercase hex and
-            # compare case-sensitively, so an uppercase value always "fails".
             local expected
             expected="$(echo "$2" | tr 'A-F' 'a-f')"
 
@@ -729,13 +713,6 @@ jobs:
 
       # ============================================================
       # ARM64 Windows: patch BDB's x86-only MUTEX_PAUSE
-      #
-      # BDB 4.8.30 (dbinc/mutex_int.h) defines MUTEX_PAUSE as the x86
-      # instruction `rep; nop` (= PAUSE). The ARM64 assembler rejects it.
-      # ARM64's equivalent is `yield`. BDB is built by depends, so inject
-      # the sed into depends/packages/bdb.mk's preprocess_cmds (or add a
-      # preprocess block if there is none). Permanent fix: put this same
-      # sed in your bdb.mk and delete this step.
       # ============================================================
       - name: Patch depends BDB for ARM64 Windows
         if: ${{ matrix.host == 'aarch64-w64-mingw32' }}
@@ -766,15 +743,6 @@ jobs:
 
       # ============================================================
       # Build depends
-      #
-      # Intel macOS:
-      #   Existing cross-compile / SDK behaviour.
-      #
-      # Apple Silicon:
-      #   Native macOS build.
-      #
-      # MUSL:
-      #   Runs inside Alpine (bash is installed by the bootstrap step).
       # ============================================================
       - name: Build depends
         shell: bash
@@ -821,27 +789,11 @@ jobs:
             echo "MACOS_SDK_PATH=$SDKROOT" >> "$GITHUB_ENV"
             echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> "$GITHUB_ENV"
 
-            # zlib 1.2.12 does `#define fdopen(fd,mode) NULL` when
-            # TARGET_OS_MAC is defined, which breaks <stdio.h>. On the
-            # macOS 15 SDK (Xcode 16) TARGET_OS_MAC is visible early (libc
-            # headers pull in TargetConditionals.h); macos-14's SDK did not.
-            # zlib skips its own define if `fdopen` is already a macro, so
-            # pre-define it. CCC_OVERRIDE_OPTIONS makes clang append this
-            # flag to every compile in the depends build, with no change to
-            # depends/packages. (Permanent fix: bump zlib in depends.)
-            # Qt 5.7.1's bundled libpng does `#include <fp.h>` (a classic
-            # Mac OS header that no longer exists) when it thinks it is on
-            # classic Mac. Provide a shim fp.h that just pulls in <math.h>.
             mkdir -p "$GITHUB_WORKSPACE/.shim"
             printf '#include <math.h>\n' > "$GITHUB_WORKSPACE/.shim/fp.h"
 
-            # Space-separated edits, each appended to every clang call.
             export CCC_OVERRIDE_OPTIONS="+-Dfdopen=fdopen +-I$GITHUB_WORKSPACE/.shim"
 
-            # --------------------------------------------------------
-            # Native ARM64 runner, but depends build is the ORIGINAL
-            # working one (HOST=aarch64-apple-darwin21).
-            # --------------------------------------------------------
             make $MAKEJOBS -C depends \
               HOST=${{ matrix.host }} \
               OPENSSL_TARGET=$OPENSSL_TARGET \
@@ -849,14 +801,6 @@ jobs:
 
           else
 
-            # ARM64 Windows: BDB 4.8.30's mut_win32.c spins with the x86-only
-            # inline asm "rep; nop" (MUTEX_PAUSE), which ARM64 rejects
-            # ("unrecognized instruction mnemonic"). Define an EMPTY assembler
-            # macro named `rep` in every translation unit, so "rep; nop"
-            # becomes a plain `nop` (valid on ARM64). Delivered via clang's
-            # CCC_OVERRIDE_OPTIONS so depends/bdb.mk needs no change.
-            # (Permanent fix: patch "rep; nop" -> "yield" in BDB's
-            # dbinc/mutex_int.h for aarch64 hosts.)
             if [[ "${{ matrix.host }}" == "aarch64-w64-mingw32" ]]; then
               mkdir -p "$GITHUB_WORKSPACE/.shim"
               printf '%s\n' '__asm__(".macro rep\n.endm");' > "$GITHUB_WORKSPACE/.shim/arm64-rep.h"
@@ -897,16 +841,13 @@ jobs:
           chmod -R +x depends || true
           chmod +x share/genbuild.sh
 
-          # ARM64 Windows: configure.ac only maps i?86 and x86_64 to
-          # WINDOWS_BITS (used for the NSIS installer) and errors out on
-          # anything else. Treat aarch64 as 64-bit. Permanent fix: make this
-          # same change in configure.ac and drop this block.
           if [[ "${{ matrix.host }}" == "aarch64-w64-mingw32" ]]; then
             sed -i 's/x86_64-\*)\([[:space:]]*\)WINDOWS_BITS=64/x86_64-*|aarch64-*)\1WINDOWS_BITS=64/' configure.ac
             echo "WINDOWS_BITS lines in configure.ac after patch:"
             grep -n "WINDOWS_BITS" configure.ac || true
             grep -q 'aarch64-\*)' configure.ac || { echo "ERROR: configure.ac patch did not apply"; exit 1; }
           fi
+
           SHORT_COMMIT=$(echo "$GIT_COMMIT_ID" | cut -c1-7)
 
           depends/${{ matrix.host }}/native/bin/ccache --max-size="$CCACHE_SIZE"
@@ -918,7 +859,6 @@ jobs:
           EXTRA_LDFLAGS=""
           CXXSTD="c++17"
 
-          # Only the aarch64-macos leg needs an explicit sysroot.
           if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
             SDKFLAGS="-isysroot ${MACOS_SDK_PATH}"
             EXTRA_LDFLAGS="-L${MACOS_SDK_PATH}/usr/lib"
@@ -1007,7 +947,7 @@ jobs:
             dist/*.app
             ${{ matrix.name }}-bench.csv
 
-    # ==============================================================
+  # ==============================================================
   # Android ARM64 / Termux
   #
   # Android NDK cross-compile on a normal Ubuntu runner, producing
@@ -1115,7 +1055,8 @@ jobs:
       # ============================================================
       # Android dependency cache
       #
-      # v3 intentionally invalidates the previous Boost cache.
+      # v3 intentionally invalidates previous Android dependency
+      # caches so the corrected Boost build is used.
       # ============================================================
 
       - name: Restore Android dependencies cache
@@ -1140,6 +1081,7 @@ jobs:
         shell: bash
         run: |
           set -e
+          set -o pipefail
 
           P="$GITHUB_WORKSPACE/android-deps"
 
@@ -1219,6 +1161,10 @@ jobs:
 
           "$CC" --version
           "$CXX" --version
+
+          echo ""
+          echo "Compiler target:"
+          "$CXX" -dumpmachine || true
 
           # ==========================================================
           # libevent 2.1.12
@@ -1312,10 +1258,11 @@ jobs:
           #
           # IMPORTANT:
           #
-          # b2 MUST be a HOST x86_64 executable.
+          # Boost.Build (b2) is a HOST executable and MUST be built
+          # for the Ubuntu x86_64 runner.
           #
-          # The Boost libraries themselves are cross-compiled for
-          # Android ARM64.
+          # The Boost libraries themselves are then cross-compiled
+          # for Android ARM64.
           # ==========================================================
 
           fetch \
@@ -1337,9 +1284,10 @@ jobs:
             ANDROID_RANLIB="${RANLIB}"
 
             # --------------------------------------------------------
-            # Bootstrap b2 using the HOST compiler.
+            # Bootstrap Boost.Build using the HOST compiler.
             #
-            # GitHub Actions runner is x86_64 Ubuntu.
+            # Do NOT allow CC/CXX/AR/RANLIB to point at Android while
+            # building b2 itself.
             # --------------------------------------------------------
 
             unset CC
@@ -1362,6 +1310,7 @@ jobs:
             export AR="${ANDROID_AR}"
             export RANLIB="${ANDROID_RANLIB}"
 
+            echo ""
             echo "============================================================"
             echo "Verifying HOST b2"
             echo "============================================================"
@@ -1370,24 +1319,19 @@ jobs:
 
             ./b2 --version
 
-            # --------------------------------------------------------
-            # Verify that b2 is actually executable by the runner.
-            # --------------------------------------------------------
-
             test -x ./b2
 
             # ========================================================
             # Boost Android Clang toolset
             #
-            # Explicitly provide:
+            # Explicitly configure:
             #
             #   Android target triple
             #   Android API level
             #   ARM64 architecture
             #   Android linker target
-            #
-            # This prevents Boost.Build from accidentally compiling
-            # the libraries for the host x86_64 environment.
+            #   Android ABI
+            #   pthread threading
             # ========================================================
 
             cat > user-config.jam <<EOF
@@ -1395,6 +1339,7 @@ jobs:
             <compileflags>--target=${TARGET}${API}
             <compileflags>-fPIC
             <compileflags>-D__ANDROID_API__=${API}
+            <compileflags>-std=c++14
             <linkflags>--target=${TARGET}${API}
             <archiver>${ANDROID_AR}
             <ranlib>${ANDROID_RANLIB} ;
@@ -1409,11 +1354,24 @@ jobs:
 
             echo ""
             echo "============================================================"
+            echo "Boost Android toolchain"
+            echo "============================================================"
+
+            echo "Android CXX: ${ANDROID_CXX}"
+            echo "Android AR:  ${ANDROID_AR}"
+            echo "Android RANLIB: ${ANDROID_RANLIB}"
+
+            "${ANDROID_CXX}" --version
+            "${ANDROID_CXX}" -dumpmachine || true
+
+            echo ""
+            echo "============================================================"
             echo "Boost Android cross-build"
             echo "============================================================"
 
             ./b2 \
               ${MAKEJOBS} \
+              -d2 \
               --user-config=user-config.jam \
               --layout=system \
               --prefix="$P" \
@@ -1422,8 +1380,10 @@ jobs:
               architecture=arm \
               address-model=64 \
               binary-format=elf \
+              abi=aapcs \
+              threadapi=pthread \
               link=static \
-              runtime-link=static \
+              runtime-link=shared \
               variant=release \
               threading=multi \
               --without-python \
@@ -1432,14 +1392,20 @@ jobs:
               --with-thread \
               --with-chrono \
               --with-program_options \
-              install
+              install \
+              2>&1 | tee boost-build.log
 
             echo ""
             echo "============================================================"
             echo "Verifying Boost libraries"
             echo "============================================================"
 
-            find "$P/lib" -maxdepth 1 -type f -name 'libboost*.a' -print | sort
+            find "$P/lib" \
+              -maxdepth 1 \
+              -type f \
+              -name 'libboost*.a' \
+              -print \
+              | sort
 
             echo ""
             echo "Boost dependency build complete."
@@ -1471,6 +1437,7 @@ jobs:
         shell: bash
         run: |
           set -e
+          set -o pipefail
 
           P="$GITHUB_WORKSPACE/android-deps"
 
@@ -1498,6 +1465,10 @@ jobs:
 
           "$CC" --version
           "$CXX" --version
+
+          echo ""
+          echo "Compiler target:"
+          "$CXX" -dumpmachine || true
 
           # ==========================================================
           # Autotools
