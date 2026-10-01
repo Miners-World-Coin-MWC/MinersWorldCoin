@@ -976,8 +976,9 @@ jobs:
       # ============================================================
       # Android dependency cache
       #
-      # v4 invalidates the previous Boost cache and ensures the
-      # corrected host-B2 / Android cross-build is rebuilt.
+      # v5 invalidates the previous dependency cache because the
+      # Boost 1.74 Android configuration now includes the libc++
+      # compatibility define required by modern Android NDKs.
       # ==============================================================
 
       - name: Restore Android dependencies cache
@@ -985,7 +986,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: android-deps
-          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v4
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v5
 
       - name: Build static dependencies (OpenSSL, libevent, BDB 4.8.30, Boost)
         if: steps.deps-cache.outputs.cache-hit != 'true'
@@ -1186,9 +1187,9 @@ jobs:
           using clang : android : ${ANDROID_CXX} :
             <compileflags>--target=${TARGET}${API}
             <compileflags>-fPIC
-            <compileflags>-D__ANDROID_API__=${API}
             <compileflags>-Wno-deprecated-declarations
             <compileflags>-Wno-deprecated-non-prototype
+            <compileflags>-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION
             <linkflags>--target=${TARGET}${API}
             <archiver>${ANDROID_AR}
             <ranlib>${ANDROID_RANLIB} ;
@@ -1229,7 +1230,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: android-deps
-          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v4
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v5
 
       # ============================================================
       # Build MinersWorldCoin
