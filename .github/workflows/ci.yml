@@ -978,7 +978,7 @@ jobs:
       #
       # v4 invalidates the previous Boost cache and ensures the
       # corrected host-B2 / Android cross-build is rebuilt.
-      # ============================================================
+      # ==============================================================
 
       - name: Restore Android dependencies cache
         id: deps-cache
@@ -997,6 +997,7 @@ jobs:
           mkdir -p "$P"
           mkdir -p build-deps
           cd build-deps
+
           TOOLCHAIN="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64"
           export PATH="${TOOLCHAIN}/bin:${PATH}"
 
@@ -1012,11 +1013,19 @@ jobs:
               "$1"
           }
 
+          # ==========================================================
+          # OpenSSL
+          # ==========================================================
+
           fetch https://www.openssl.org/source/old/1.1.1/openssl-1.1.1w.tar.gz openssl.tar.gz
+
           tar xzf openssl.tar.gz
+
           (
             cd openssl-1.1.1w
+
             export ANDROID_NDK_ROOT="${ANDROID_NDK_HOME}"
+
             ./Configure \
               android-arm64 \
               -D__ANDROID_API__="${API}" \
@@ -1025,9 +1034,14 @@ jobs:
               no-comp \
               --prefix="$P" \
               --openssldir="$P/ssl"
+
             make ${MAKEJOBS} build_libs
             make install_dev
           )
+
+          # ==========================================================
+          # Android compiler
+          # ==========================================================
 
           export CC="${TOOLCHAIN}/bin/${TARGET}${API}-clang"
           export CXX="${TOOLCHAIN}/bin/${TARGET}${API}-clang++"
@@ -1039,10 +1053,17 @@ jobs:
           "$CC" --version
           "$CXX" --version
 
+          # ==========================================================
+          # libevent
+          # ==========================================================
+
           fetch https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz libevent.tar.gz
+
           tar xzf libevent.tar.gz
+
           (
             cd libevent-2.1.12-stable
+
             ./configure \
               --host="${TARGET}" \
               --build=x86_64-pc-linux-gnu \
@@ -1053,15 +1074,21 @@ jobs:
               --disable-openssl \
               --disable-samples \
               --disable-libevent-regress
+
             make ${MAKEJOBS}
             make install
           )
+
+          # ==========================================================
+          # Berkeley DB 4.8.30
+          # ==========================================================
 
           fetch https://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz db-4.8.30.NC.tar.gz
 
           echo "12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef  db-4.8.30.NC.tar.gz" | sha256sum -c -
 
           tar xzf db-4.8.30.NC.tar.gz
+
           (
             cd db-4.8.30.NC
 
@@ -1073,8 +1100,13 @@ jobs:
               's/atomic_init/atomic_init_db/g' \
               dbinc/atomic.h
 
-            cp /usr/share/automake-*/config.sub dist/
-            cp /usr/share/automake-*/config.guess dist/
+            # The Berkeley DB archive can contain read-only files in
+            # dist/. Make the directory and its files writable before
+            # replacing config.sub/config.guess for Android.
+            chmod -R u+rwX dist/
+
+            cp /usr/share/automake-*/config.sub dist/config.sub
+            cp /usr/share/automake-*/config.guess dist/config.guess
 
             cd build_unix
 
@@ -1093,8 +1125,14 @@ jobs:
             make install_lib install_include
           )
 
+          # ==========================================================
+          # Boost 1.74
+          # ==========================================================
+
           fetch https://archives.boost.io/release/1.74.0/source/boost_1_74_0.tar.bz2 boost.tar.bz2
+
           tar xjf boost.tar.bz2
+
           (
             cd boost_1_74_0
 
@@ -1229,19 +1267,11 @@ jobs:
           "$CC" --version
           "$CXX" --version
 
-          # ==========================================================
-          # Autotools
-          # ==========================================================
-
           chmod +x autogen.sh share/genbuild.sh || true
 
           ./autogen.sh
 
           chmod +x configure || true
-
-          # ==========================================================
-          # Configure
-          # ==========================================================
 
           ./configure \
             --host="${TARGET}" \
@@ -1284,10 +1314,6 @@ jobs:
               false
             )
 
-          # ==========================================================
-          # Build
-          # ==========================================================
-
           make ${MAKEJOBS} \
             || (
               echo ""
@@ -1300,10 +1326,6 @@ jobs:
               false
             )
 
-          # ==========================================================
-          # Strip binaries
-          # ==========================================================
-
           echo ""
           echo "============================================================"
           echo "Stripping Android ARM64 binaries"
@@ -1313,10 +1335,6 @@ jobs:
             src/minersworldcoind \
             src/minersworldcoin-cli \
             src/minersworldcoin-tx
-
-          # ==========================================================
-          # Verify binaries
-          # ==========================================================
 
           echo ""
           echo "============================================================"
@@ -1335,10 +1353,6 @@ jobs:
             src/minersworldcoind \
             src/minersworldcoin-cli \
             src/minersworldcoin-tx
-
-      # ============================================================
-      # Upload Termux binaries
-      # ============================================================
 
       - name: Upload Android ARM64 / Termux artifacts
         uses: actions/upload-artifact@v4
