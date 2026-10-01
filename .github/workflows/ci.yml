@@ -986,7 +986,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: android-deps
-          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v5
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v6
 
       - name: Build static dependencies (OpenSSL, libevent, BDB 4.8.30, Boost)
         if: steps.deps-cache.outputs.cache-hit != 'true'
@@ -1111,8 +1111,8 @@ jobs:
 
             cd build_unix
 
-            CFLAGS="-O2 -fPIC -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=incompatible-pointer-types -Wno-deprecated-non-prototype" \
-            CXXFLAGS="-std=c++11 -O2 -fPIC -Wno-deprecated-declarations -Wno-deprecated-non-prototype" \
+            CFLAGS="-O2 -fPIC -Datomic_init=atomic_init_db -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=incompatible-pointer-types -Wno-deprecated-non-prototype" \
+            CXXFLAGS="-std=c++11 -O2 -fPIC -Datomic_init=atomic_init_db -Wno-deprecated-declarations -Wno-deprecated-non-prototype" \
             ../dist/configure \
               --host="${TARGET}" \
               --build=x86_64-pc-linux-gnu \
@@ -1230,7 +1230,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: android-deps
-          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v5
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v6
 
       # ============================================================
       # Build MinersWorldCoin
@@ -1289,7 +1289,7 @@ jobs:
             BDB_CFLAGS="-I$P/include" \
             BDB_LIBS="-L$P/lib -ldb_cxx-4.8" \
             EVENT_CFLAGS="-I$P/include" \
-            EVENT_LIBS="-L$P/lib -levent_core" \
+            EVENT_LIBS="-L$P/lib -levent_core -levent_pthreads" \
             EVENT_PTHREADS_CFLAGS="-I$P/include" \
             EVENT_PTHREADS_LIBS="-L$P/lib -levent_pthreads -levent_core" \
             CRYPTO_CFLAGS="-I$P/include" \
