@@ -190,8 +190,10 @@ jobs:
           # scripts named aarch64-w64-mingw32-gcc / g++ (+ -posix) that
           # call clang, which is what depends looks for.
           #
-          # Daemon only for now: no Qt, no wallet. Remove NO_WALLET=1 /
-          # --disable-wallet once the toolchain builds cleanly.
+          # Daemon + wallet, no Qt. The wallet is ENABLED because this fork's
+          # miner.cpp includes wallet/wallet.h unconditionally, so even a
+          # --disable-wallet build needs the Berkeley DB headers (depends
+          # builds BDB 4.8.30 for this host).
           #
           # experimental: true => failure does NOT fail the workflow.
           # Remove that line when it is stable.
@@ -235,8 +237,8 @@ jobs:
             run-bench: false
             check-security: false
             check-symbols: false
-            dep-opts: 'NO_QT=1 NO_WALLET=1 NO_UPNP=1 openssl_config_opts_aarch64_mingw32="mingw64 no-asm"'
-            config-opts: "--without-gui --disable-wallet --disable-tests --disable-bench"
+            dep-opts: 'NO_QT=1 NO_UPNP=1 openssl_config_opts_aarch64_mingw32="mingw64 no-asm"'
+            config-opts: "--without-gui --disable-tests --disable-bench"
             goal: install
 
           # ============================================================
@@ -362,6 +364,10 @@ jobs:
           echo ""
           echo "Xcode:"
           xcodebuild -version
+
+          echo ""
+          echo "Installed Xcode versions (for a possible pin):"
+          ls -d /Applications/Xcode* 2>/dev/null || true
 
           echo ""
           echo "Developer directory:"
@@ -786,7 +792,14 @@ jobs:
             # pre-define it. CCC_OVERRIDE_OPTIONS makes clang append this
             # flag to every compile in the depends build, with no change to
             # depends/packages. (Permanent fix: bump zlib in depends.)
-            export CCC_OVERRIDE_OPTIONS="+-Dfdopen=fdopen"
+            # Qt 5.7.1's bundled libpng does `#include <fp.h>` (a classic
+            # Mac OS header that no longer exists) when it thinks it is on
+            # classic Mac. Provide a shim fp.h that just pulls in <math.h>.
+            mkdir -p "$GITHUB_WORKSPACE/.shim"
+            printf '#include <math.h>\n' > "$GITHUB_WORKSPACE/.shim/fp.h"
+
+            # Space-separated edits, each appended to every clang call.
+            export CCC_OVERRIDE_OPTIONS="+-Dfdopen=fdopen +-I$GITHUB_WORKSPACE/.shim"
 
             # --------------------------------------------------------
             # Native ARM64 runner, but depends build is the ORIGINAL
@@ -1089,6 +1102,14 @@ jobs:
             # clang: avoid the __atomic_compare_exchange name clash.
             # (4.8.x keeps this at dbinc/atomic.h; src/dbinc is a 5.x layout.)
             sed -i 's/__atomic_compare_exchange/__atomic_compare_exchange_db/g' dbinc/atomic.h
+            # BDB defines an atomic_init(p, val) macro that rewrites libc++'s
+            # own atomic_init() declaration in <atomic> (pulled in by
+            # <iostream> via db_cxx.h). Rename it everywhere in the BDB tree
+            # (whole-word match) so definition and uses stay consistent.
+            grep -rlw 'atomic_init' . --include='*.c' --include='*.h' --include='*.in' --include='*.cpp' \
+              | xargs -r sed -i 's/\batomic_init\b/atomic_init_db/g'
+            echo "atomic_init occurrences left (expect 0):"
+            grep -rw 'atomic_init' . --include='*.c' --include='*.h' --include='*.in' --include='*.cpp' | wc -l
             # BDB ships a 2008 config.sub that rejects "android".
             cp /usr/share/misc/config.sub /usr/share/misc/config.guess dist/
             cd build_unix
