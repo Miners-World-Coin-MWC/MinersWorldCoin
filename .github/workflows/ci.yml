@@ -264,35 +264,31 @@ jobs:
             sdk-fallback-shasum: "d080fc672d94f95eb54651c37ede80f61761ce4c91f87061e11a20222c8d00c8"
 
           # ============================================================
-          # Apple Silicon macOS (EXPERIMENTAL)
+          # Apple Silicon macOS
           #
-          # COMPLETELY SEPARATE NATIVE BUILD
+          # ORIGINAL WORKING CONFIG (depends build, aarch64-apple-darwin21,
+          # phracker 11.3 SDK, bdb 4.8.30 + Qt from depends, dmg deploy).
           #
-          # This DOES NOT use the Linux container.
-          # This DOES NOT use the Intel SDK.
-          # This DOES NOT use the depends system: Dogecoin 1.14 depends
-          # only supports Darwin as a Linux cross-build (needs an SDK
-          # tarball + cctools; its config.sub rejects arm64; Qt 5.7 has
-          # no Apple Silicon support). Dependencies come from Homebrew.
+          # Only change: runs-on macos-14 -> macos-15. Homebrew dropped
+          # bottles for macOS 14 (Tier 3), so every brew package built
+          # from source (llvm alone ~1h48m, x265 failed).
           #
-          # Daemon only for now: no Qt, no wallet. Add the GUI/wallet
-          # back once this builds cleanly.
-          #
-          # experimental: true => failure does NOT fail the workflow.
+          # Native runner: NO container, NO Intel SDK.
           # ============================================================
           - name: aarch64-macos
-            host: aarch64-apple-darwin
+            host: aarch64-apple-darwin21
             runs-on: macos-15
-            experimental: true
-            # No container here.
-            # This is intentional.
-            packages: ""
+            packages: cmake imagemagick libcap-dev librsvg2-bin libz-dev libbz2-dev libtiff-tools libtinfo5 xorriso
             run-bench: false
-            check-security: false
+            check-security: true
             check-symbols: false
-            dep-opts: ""
-            config-opts: "--without-gui --disable-wallet --disable-tests --disable-bench"
-            goal: install
+            dep-opts: "WITH_OPENSSL=1"
+            config-opts: "--with-gui=qt5 --disable-tests"
+            goal: deploy
+            sdk: 11.3
+            sdk-url: "https://github.com/phracker/MacOSX-SDKs/releases/download/11.3"
+            sdk-filename: "MacOSX11.3.sdk.tar.xz"
+            sdk-shasum: "CD4F08A75577145B8F05245A2975F7C81401D75E9535DCFFBB879EE1DEEFCBF4"
 
     # Matrix entries marked `experimental: true` never fail the workflow.
     continue-on-error: ${{ matrix.experimental == true }}
@@ -412,14 +408,16 @@ jobs:
             export HOMEBREW_NO_INSTALL_CLEANUP=1
 
             brew install \
+              cmake \
+              imagemagick \
+              libtiff \
+              xorriso \
               autoconf \
               automake \
               libtool \
               pkg-config \
               ccache \
-              boost \
-              libevent \
-              openssl@3 \
+              librsvg \
               python
 
             BREW_PYTHON="$(brew --prefix python)/bin"
@@ -759,10 +757,13 @@ jobs:
             echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> "$GITHUB_ENV"
 
             # --------------------------------------------------------
-            # Native ARM64: no depends build. Libraries come from
-            # Homebrew (see "Build MinersWorldCoin" for the paths).
+            # Native ARM64 runner, but depends build is the ORIGINAL
+            # working one (HOST=aarch64-apple-darwin21).
             # --------------------------------------------------------
-            echo "Skipping depends for native macOS ARM (using Homebrew)."
+            make $MAKEJOBS -C depends \
+              HOST=${{ matrix.host }} \
+              OPENSSL_TARGET=$OPENSSL_TARGET \
+              ${{ matrix.dep-opts }}
 
           else
 
@@ -800,53 +801,45 @@ jobs:
 
           SHORT_COMMIT=$(echo "$GIT_COMMIT_ID" | cut -c1-7)
 
-          # ----------------------------------------------------------
-          # Native macOS ARM has its own ccache binary.
-          # ----------------------------------------------------------
-          if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
-            ccache --max-size="$CCACHE_SIZE"
-          else
-            depends/${{ matrix.host }}/native/bin/ccache --max-size="$CCACHE_SIZE"
-          fi
+          depends/${{ matrix.host }}/native/bin/ccache --max-size="$CCACHE_SIZE"
 
           ./autogen.sh
           chmod +x configure || true
 
           SDKFLAGS=""
           EXTRA_LDFLAGS=""
-          BREW_CONFIG=""
+          CXXSTD="c++17"
 
+          # Only the aarch64-macos leg needs an explicit sysroot.
           if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
-            BP="$(brew --prefix)"
-            SSL="$(brew --prefix openssl@3)"
-            export PKG_CONFIG_PATH="$BP/lib/pkgconfig:$SSL/lib/pkgconfig:$PKG_CONFIG_PATH"
-            SDKFLAGS="-isysroot ${MACOS_SDK_PATH} -I$BP/include -I$SSL/include"
-            EXTRA_LDFLAGS="-L${MACOS_SDK_PATH}/usr/lib -L$BP/lib -L$SSL/lib"
-            BREW_CONFIG="--with-boost=$BP"
+            SDKFLAGS="-isysroot ${MACOS_SDK_PATH}"
+            EXTRA_LDFLAGS="-L${MACOS_SDK_PATH}/usr/lib"
           fi
 
           ./configure \
             --prefix="$(pwd)/depends/${{ matrix.host }}" \
             ${{ matrix.config-opts }} \
-            $BREW_CONFIG \
             --enable-reduce-exports \
             CFLAGS="$SDKFLAGS -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-            CXXFLAGS="$SDKFLAGS -std=c++17 -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            CXXFLAGS="$SDKFLAGS -std=$CXXSTD -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
             LDFLAGS="$SDKFLAGS $EXTRA_LDFLAGS" \
             || (
               echo "============================================================"
               echo "configure failed; dumping config.log"
               echo "============================================================"
               cat config.log
+              echo "============================================================"
+              echo "configure errors:"
+              grep -n 'configure: error' config.log || true
               false
             )
 
           make $MAKEJOBS ${{ matrix.goal }} \
-            CXXFLAGS="-std=c++17 $SDKFLAGS" \
+            CXXFLAGS="-std=$CXXSTD $SDKFLAGS" \
             || (
               echo "Build failure. Verbose build follows."
               make ${{ matrix.goal }} \
-                CXXFLAGS="-std=c++17 $SDKFLAGS" \
+                CXXFLAGS="-std=$CXXSTD $SDKFLAGS" \
                 V=1
               false
             )
@@ -961,14 +954,25 @@ jobs:
           # Wallet support needs Berkeley DB. Use it if Termux has it.
           # ----------------------------------------------------------
           WALLET_OPTS="--disable-wallet"
+          BDB_ARGS=()
           if pkg install -y libdb; then
-            WALLET_OPTS="--with-incompatible-bdb"
-            echo "libdb found: building WITH wallet"
+            echo "---- libdb files ----"
+            find "$PREFIX/include" "$PREFIX/lib" -iname '*db_cxx*' -o -iname 'libdb*' 2>/dev/null | head -n 30
+            DBH="$(find "$PREFIX/include" -name db_cxx.h 2>/dev/null | head -n 1)"
+            DBL="$(ls "$PREFIX/lib" 2>/dev/null | grep -E '^libdb_cxx.*\.(so|a)' | head -n 1)"
+            if [ -n "$DBH" ] && [ -n "$DBL" ]; then
+              DBL="${DBL#lib}"; DBL="${DBL%%.so*}"; DBL="${DBL%.a}"
+              WALLET_OPTS="--with-incompatible-bdb"
+              BDB_ARGS=("BDB_CFLAGS=-I$(dirname "$DBH")" "BDB_LIBS=-L$PREFIX/lib -l$DBL")
+              echo "libdb found ($DBH, -l$DBL): building WITH wallet"
+            else
+              echo "WARNING: libdb installed but db_cxx.h / libdb_cxx not found, building WITHOUT wallet"
+            fi
           else
             echo "WARNING: libdb not available, building WITHOUT wallet"
           fi
 
-          SHORT_COMMIT="$(echo "$GIT_COMMIT_ID" | cut -c1-7)"
+          SHORT_COMMIT="$(cut -c1-7 /home/src/.commit_id 2>/dev/null || true)"
 
           git config --global --add safe.directory /home/src || true
 
@@ -1008,9 +1012,10 @@ jobs:
             --disable-bench \
             --enable-reduce-exports \
             $WALLET_OPTS \
+            "${BDB_ARGS[@]}" \
             CFLAGS="-pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
             CXXFLAGS="-std=c++17 -pipe -O2 -Wno-deprecated-declarations -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-            || { echo "configure failed; dumping config.log"; cat config.log; exit 1; }
+            || { echo "configure failed; dumping config.log"; cat config.log; echo "=== configure errors ==="; grep -n 'configure: error' config.log; exit 1; }
 
           make -j3 || { echo "Build failure. Verbose build follows."; make V=1; exit 1; }
 
@@ -1023,6 +1028,8 @@ jobs:
       - name: Build in Termux
         shell: bash
         run: |
+          echo -n "${{ github.sha }}" > "$GITHUB_WORKSPACE/.commit_id"
+
           # The Termux image runs as an unprivileged user that does NOT own
           # the checkout, so chmod must happen here on the host (as owner).
           # a+rwx (not a+rwX) so autogen.sh, genbuild.sh, leveldb scripts
