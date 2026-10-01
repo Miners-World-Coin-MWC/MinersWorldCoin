@@ -728,6 +728,43 @@ jobs:
           echo "SDK extraction complete."
 
       # ============================================================
+      # ARM64 Windows: patch BDB's x86-only MUTEX_PAUSE
+      #
+      # BDB 4.8.30 (dbinc/mutex_int.h) defines MUTEX_PAUSE as the x86
+      # instruction `rep; nop` (= PAUSE). The ARM64 assembler rejects it.
+      # ARM64's equivalent is `yield`. BDB is built by depends, so inject
+      # the sed into depends/packages/bdb.mk's preprocess_cmds (or add a
+      # preprocess block if there is none). Permanent fix: put this same
+      # sed in your bdb.mk and delete this step.
+      # ============================================================
+      - name: Patch depends BDB for ARM64 Windows
+        if: ${{ matrix.host == 'aarch64-w64-mingw32' }}
+        shell: bash
+        run: |
+          set -e
+
+          python3 - <<'PY'
+          import re
+          p = 'depends/packages/bdb.mk'
+          s = open(p).read()
+          if 'rep; nop' in s:
+              print('bdb.mk already patched, nothing to do')
+              raise SystemExit(0)
+          fix = ("sed -i.arm 's/__asm__ volatile (\"rep; nop\" : : );/"
+                 "__asm__ volatile (\"yield\" : : );/' dbinc/mutex_int.h")
+          m = re.search(r'define \$\(package\)_preprocess_cmds\n', s)
+          if m:
+              s = s[:m.end()] + '  ' + fix + ' && \\\n' + s[m.end():]
+          else:
+              s += '\ndefine $(package)_preprocess_cmds\n  ' + fix + '\nendef\n'
+          open(p, 'w').write(s)
+          print('patched', p)
+          PY
+
+          echo "--- bdb.mk preprocess block after patch ---"
+          sed -n '/preprocess_cmds/,/^endef/p' depends/packages/bdb.mk
+
+      # ============================================================
       # Build depends
       #
       # Intel macOS:
@@ -811,6 +848,22 @@ jobs:
               ${{ matrix.dep-opts }}
 
           else
+
+            # ARM64 Windows: BDB 4.8.30's mut_win32.c spins with the x86-only
+            # inline asm "rep; nop" (MUTEX_PAUSE), which ARM64 rejects
+            # ("unrecognized instruction mnemonic"). Define an EMPTY assembler
+            # macro named `rep` in every translation unit, so "rep; nop"
+            # becomes a plain `nop` (valid on ARM64). Delivered via clang's
+            # CCC_OVERRIDE_OPTIONS so depends/bdb.mk needs no change.
+            # (Permanent fix: patch "rep; nop" -> "yield" in BDB's
+            # dbinc/mutex_int.h for aarch64 hosts.)
+            if [[ "${{ matrix.host }}" == "aarch64-w64-mingw32" ]]; then
+              mkdir -p "$GITHUB_WORKSPACE/.shim"
+              printf '%s\n' '__asm__(".macro rep\n.endm");' > "$GITHUB_WORKSPACE/.shim/arm64-rep.h"
+              export CCC_OVERRIDE_OPTIONS="+-include$GITHUB_WORKSPACE/.shim/arm64-rep.h"
+              echo "CCC_OVERRIDE_OPTIONS=$CCC_OVERRIDE_OPTIONS"
+              cat "$GITHUB_WORKSPACE/.shim/arm64-rep.h"
+            fi
 
             make $MAKEJOBS -C depends \
               HOST=${{ matrix.host }} \
@@ -1109,7 +1162,9 @@ jobs:
             grep -rlw 'atomic_init' . --include='*.c' --include='*.h' --include='*.in' --include='*.cpp' \
               | xargs -r sed -i 's/\batomic_init\b/atomic_init_db/g'
             echo "atomic_init occurrences left (expect 0):"
-            grep -rw 'atomic_init' . --include='*.c' --include='*.h' --include='*.in' --include='*.cpp' | wc -l
+            # grep exits 1 when it finds nothing, which is the GOOD case here;
+            # under `set -e -o pipefail` that would abort the script.
+            { grep -rw 'atomic_init' . --include='*.c' --include='*.h' --include='*.in' --include='*.cpp' || true; } | wc -l
             # BDB ships a 2008 config.sub that rejects "android".
             cp /usr/share/misc/config.sub /usr/share/misc/config.guess dist/
             cd build_unix
