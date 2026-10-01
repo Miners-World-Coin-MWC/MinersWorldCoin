@@ -204,9 +204,15 @@ jobs:
             postinstall: |
               set -e
               LLVM_MINGW=llvm-mingw-20240619-ucrt-ubuntu-20.04-x86_64
-              curl -fsSL -o /tmp/llvm-mingw.tar.xz \
+              echo "Downloading ${LLVM_MINGW}..."
+              curl -fL -sS --connect-timeout 20 --max-time 600 \
+                --retry 4 --retry-delay 5 --retry-all-errors \
+                -o /tmp/llvm-mingw.tar.xz \
                 "https://github.com/mstorsjo/llvm-mingw/releases/download/20240619/${LLVM_MINGW}.tar.xz"
+              ls -lh /tmp/llvm-mingw.tar.xz
+              echo "Extracting..."
               tar -C /opt -xf /tmp/llvm-mingw.tar.xz
+              echo "Extracted."
               T=/opt/${LLVM_MINGW}/bin
               for n in gcc gcc-posix; do
                 printf '#!/bin/sh\nexec %s/aarch64-w64-mingw32-clang "$@"\n' "$T" > "$T/aarch64-w64-mingw32-$n"
@@ -270,7 +276,9 @@ jobs:
           # ============================================================
           - name: aarch64-macos
             host: aarch64-apple-darwin
-            runs-on: macos-14
+            # macos-14 is Homebrew Tier 3 (no bottles => everything builds
+            # from source, llvm alone took ~1h48m and x265 failed).
+            runs-on: macos-15
             # No container here.
             # This is intentional.
             packages: ""
@@ -283,6 +291,7 @@ jobs:
 
     # Matrix entries marked `experimental: true` never fail the workflow.
     continue-on-error: ${{ matrix.experimental == true }}
+    timeout-minutes: ${{ matrix.experimental == true && 90 || 360 }}
 
     runs-on: ${{ matrix.runs-on || 'ubuntu-22.04' }}
 
@@ -391,7 +400,11 @@ jobs:
             echo "Installing native macOS ARM dependencies"
             echo "============================================================"
 
-            brew update || true
+            # Don't upgrade already-installed deps (avoids pointless
+            # rebuilds and the openssl@3 link conflict) or auto-update.
+            export HOMEBREW_NO_INSTALL_UPGRADE=1
+            export HOMEBREW_NO_AUTO_UPDATE=1
+            export HOMEBREW_NO_INSTALL_CLEANUP=1
 
             brew install \
               cmake \
@@ -503,6 +516,7 @@ jobs:
       # ============================================================
       - name: Post install
         if: ${{ matrix.postinstall }}
+        timeout-minutes: 15
         shell: bash
         run: ${{ matrix.postinstall }}
 
@@ -953,7 +967,29 @@ jobs:
 
           git config --global --add safe.directory /home/src || true
 
-          ./autogen.sh
+          # ----------------------------------------------------------
+          # Termux has no /bin/sh, /usr/bin/env, etc., so scripts with
+          # those shebangs fail with "bad interpreter". Rewrite them to
+          # point at $PREFIX, and tell autoconf which shell to use.
+          # Run once before autogen (autogen.sh, genbuild.sh, leveldb
+          # scripts) and once after (generated configure scripts).
+          # ----------------------------------------------------------
+          export CONFIG_SHELL="$PREFIX/bin/bash"
+          export SHELL="$PREFIX/bin/bash"
+
+          fix_shebangs() {
+            find . -path ./.git -prune -o -type f -size -1M -print | while IFS= read -r f; do
+              first=""
+              IFS= read -r first < "$f" 2>/dev/null || true
+              case "$first" in
+                '#!'*/bin/*) termux-fix-shebang "$f" 2>/dev/null || true ;;
+              esac
+            done
+          }
+
+          fix_shebangs
+          bash ./autogen.sh
+          fix_shebangs
 
           ./configure \
             --without-gui \
