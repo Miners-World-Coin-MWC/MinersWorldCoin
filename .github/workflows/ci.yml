@@ -1029,7 +1029,7 @@ jobs:
   android-arm64:
     name: android-arm64
     runs-on: ubuntu-22.04
-    continue-on-error: true
+    continue-on-error: false
     timeout-minutes: 120
     env:
       API: "24"
@@ -1069,16 +1069,27 @@ jobs:
           set -e
 
           sudo apt-get update
+
           sudo apt-get install -y \
-            build-essential autoconf automake libtool pkg-config \
-            autotools-dev bsdmainutils python3 curl ca-certificates bzip2
+            build-essential \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            autotools-dev \
+            bsdmainutils \
+            python3 \
+            curl \
+            ca-certificates \
+            bzip2 \
+            unzip
 
       - name: Restore Android dependencies cache
         id: deps-cache
         uses: actions/cache/restore@v4
         with:
           path: android-deps
-          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v1
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v2
 
       - name: Build static dependencies (OpenSSL, libevent, BDB 4.8.30, Boost)
         if: steps.deps-cache.outputs.cache-hit != 'true'
@@ -1089,141 +1100,215 @@ jobs:
 
           P="$GITHUB_WORKSPACE/android-deps"
           mkdir -p "$P" build-deps
+
           cd build-deps
 
           TOOLCHAIN="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64"
+
           export PATH="${TOOLCHAIN}/bin:${PATH}"
 
           fetch() {
-            curl -fL -sS --retry 4 --retry-delay 5 \
-              --connect-timeout 20 --max-time 900 \
-              -o "$2" "$1"
+            curl \
+              -fL \
+              -sS \
+              --retry 4 \
+              --retry-delay 5 \
+              --connect-timeout 20 \
+              --max-time 900 \
+              -o "$2" \
+              "$1"
           }
 
-          # ---------------- OpenSSL 1.1.1w ----------------
-          echo "============================================================"
-          echo "OpenSSL 1.1.1w"
-          echo "============================================================"
-          fetch https://www.openssl.org/source/old/1.1.1/openssl-1.1.1w.tar.gz openssl.tar.gz
+          # ============================================================
+          # OpenSSL 1.1.1w
+          # ============================================================
+
+          fetch \
+            https://www.openssl.org/source/old/1.1.1/openssl-1.1.1w.tar.gz \
+            openssl.tar.gz
+
           tar xzf openssl.tar.gz
+
           (
             cd openssl-1.1.1w
+
             export ANDROID_NDK_ROOT="${ANDROID_NDK_HOME}"
-            ./Configure android-arm64 -D__ANDROID_API__="${API}" \
-              no-shared no-tests no-comp \
-              --prefix="$P" --openssldir="$P/ssl"
+
+            ./Configure \
+              android-arm64 \
+              -D__ANDROID_API__="${API}" \
+              no-shared \
+              no-tests \
+              no-comp \
+              --prefix="$P" \
+              --openssldir="$P/ssl"
+
             make ${MAKEJOBS} build_libs
             make install_dev
           )
 
-          # Toolchain for everything below.
+          # ============================================================
+          # Android compiler/toolchain
+          # ============================================================
+
           export CC="${TOOLCHAIN}/bin/${TARGET}${API}-clang"
           export CXX="${TOOLCHAIN}/bin/${TARGET}${API}-clang++"
           export AR="${TOOLCHAIN}/bin/llvm-ar"
           export RANLIB="${TOOLCHAIN}/bin/llvm-ranlib"
           export STRIP="${TOOLCHAIN}/bin/llvm-strip"
 
-          # ---------------- libevent 2.1.12 ----------------
-          echo "============================================================"
-          echo "libevent 2.1.12"
-          echo "============================================================"
-          fetch https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz libevent.tar.gz
+          "$CC" --version
+          "$CXX" --version
+
+          # ============================================================
+          # libevent 2.1.12
+          # ============================================================
+
+          fetch \
+            https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz \
+            libevent.tar.gz
+
           tar xzf libevent.tar.gz
+
           (
             cd libevent-2.1.12-stable
+
             ./configure \
-              --host="${TARGET}" --build=x86_64-pc-linux-gnu \
+              --host="${TARGET}" \
+              --build=x86_64-pc-linux-gnu \
               --prefix="$P" \
-              --disable-shared --enable-static --with-pic \
-              --disable-openssl --disable-samples --disable-libevent-regress
+              --disable-shared \
+              --enable-static \
+              --with-pic \
+              --disable-openssl \
+              --disable-samples \
+              --disable-libevent-regress
+
             make ${MAKEJOBS}
             make install
           )
 
-          # ---------------- Berkeley DB 4.8.30 ----------------
-          echo "============================================================"
-          echo "Berkeley DB 4.8.30"
-          echo "============================================================"
-          fetch https://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz db.tar.gz
-          echo "12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef  db.tar.gz" | sha256sum -c
+          # ============================================================
+          # Berkeley DB 4.8.30
+          # ============================================================
+
+          fetch \
+            https://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz \
+            db.tar.gz
+
+          echo "12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef  db.tar.gz" \
+            | sha256sum -c
+
           tar xzf db.tar.gz
+
           (
             cd db-4.8.30.NC
-            # The BDB tarball extracts files read-only; make them writable
-            # so we can patch atomic.h and overwrite config.sub/config.guess.
+
             chmod -R u+w .
-            # clang: avoid the __atomic_compare_exchange name clash.
-            # (4.8.x keeps this at dbinc/atomic.h; src/dbinc is a 5.x layout.)
-            sed -i 's/__atomic_compare_exchange/__atomic_compare_exchange_db/g' dbinc/atomic.h
-            # BDB defines an atomic_init(p, val) macro that rewrites libc++'s
-            # own atomic_init() declaration in <atomic> (pulled in by
-            # <iostream> via db_cxx.h). Rename it everywhere in the BDB tree
-            # (whole-word match) so definition and uses stay consistent.
-            grep -rlw 'atomic_init' . --include='*.c' --include='*.h' --include='*.in' --include='*.cpp' \
+
+            sed -i \
+              's/__atomic_compare_exchange/__atomic_compare_exchange_db/g' \
+              dbinc/atomic.h
+
+            grep -rlw 'atomic_init' . \
+              --include='*.c' \
+              --include='*.h' \
+              --include='*.in' \
+              --include='*.cpp' \
               | xargs -r sed -i 's/\batomic_init\b/atomic_init_db/g'
-            echo "atomic_init occurrences left (expect 0):"
-            # grep exits 1 when it finds nothing, which is the GOOD case here;
-            # under `set -e -o pipefail` that would abort the script.
-            { grep -rw 'atomic_init' . --include='*.c' --include='*.h' --include='*.in' --include='*.cpp' || true; } | wc -l
-            # BDB ships a 2008 config.sub that rejects "android".
+
+            {
+              grep -rw 'atomic_init' . \
+                --include='*.c' \
+                --include='*.h' \
+                --include='*.in' \
+                --include='*.cpp' || true
+            } | wc -l
+
             cp /usr/share/misc/config.sub /usr/share/misc/config.guess dist/
+
             cd build_unix
-            # -std=c++11: BDB 4.8 uses throw() specs, illegal in C++17.
-            # -Wno-error=...: modern clang makes old-style C hard errors.
+
             ../dist/configure \
-              --host="${TARGET}" --build=x86_64-pc-linux-gnu \
+              --host="${TARGET}" \
+              --build=x86_64-pc-linux-gnu \
               --prefix="$P" \
-              --enable-cxx --disable-shared --with-pic \
+              --enable-cxx \
+              --disable-shared \
+              --with-pic \
               --with-mutex=POSIX/pthreads \
               CFLAGS="-O2 -fPIC -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=incompatible-pointer-types" \
               CXXFLAGS="-std=c++11 -O2 -fPIC"
+
             make ${MAKEJOBS} libdb_cxx-4.8.a libdb-4.8.a
             make install_lib install_include
           )
 
-          # ---------------- Boost 1.74.0 ----------------
-          echo "============================================================"
-          echo "Boost 1.74.0"
-          echo "============================================================"
-          fetch https://archives.boost.io/release/1.74.0/source/boost_1_74_0.tar.bz2 boost.tar.bz2
+          # ============================================================
+          # Boost 1.74.0
+          # ============================================================
+
+          fetch \
+            https://archives.boost.io/release/1.74.0/source/boost_1_74_0.tar.bz2 \
+            boost.tar.bz2
+
           tar xjf boost.tar.bz2
+
           (
             cd boost_1_74_0
+
             ./bootstrap.sh --with-toolset=gcc
+
             cat > user-config.jam <<EOF
-          using clang : android : ${CXX} : <archiver>${AR} <ranlib>${RANLIB} <compileflags>-fPIC ;
+          using clang : android : ${CXX} :
+            <archiver>${AR}
+            <ranlib>${RANLIB}
+            <compileflags>-fPIC ;
           EOF
-            ./b2 ${MAKEJOBS} --user-config=user-config.jam --layout=system \
+
+            ./b2 \
+              ${MAKEJOBS} \
+              --user-config=user-config.jam \
+              --layout=system \
               --prefix="$P" \
-              toolset=clang-android target-os=android \
-              architecture=arm address-model=64 \
-              link=static variant=release threading=multi \
-              --with-system --with-filesystem --with-thread \
-              --with-chrono --with-program_options \
+              toolset=clang-android \
+              target-os=android \
+              architecture=arm \
+              address-model=64 \
+              link=static \
+              variant=release \
+              threading=multi \
+              --with-system \
+              --with-filesystem \
+              --with-thread \
+              --with-chrono \
+              --with-program_options \
               install
           )
 
+          echo ""
           echo "============================================================"
-          echo "Dependency prefix contents"
+          echo "Android dependency build complete"
           echo "============================================================"
-          ls -lh "$P/lib" "$P/include" | head -n 80
 
-      # Saved immediately (not at job end) so a later wallet-build failure
-      # does not throw away the dependency build.
+          ls -lh "$P/lib" "$P/include" | head -n 100
+
       - name: Save Android dependencies cache
         if: steps.deps-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: android-deps
-          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v1
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v2
 
-      - name: Build MinersWorldCoin for Android ARM64
+      - name: Build MinersWorldCoin for Android ARM64 / Termux
         shell: bash
         run: |
           set -e
 
           P="$GITHUB_WORKSPACE/android-deps"
+
           TOOLCHAIN="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64"
+
           export PATH="${TOOLCHAIN}/bin:${PATH}"
 
           export CC="${TOOLCHAIN}/bin/${TARGET}${API}-clang"
@@ -1234,20 +1319,37 @@ jobs:
 
           SHORT_COMMIT="$(echo "${{ github.sha }}" | cut -c1-7)"
 
+          echo "============================================================"
+          echo "Android ARM64 / Termux build"
+          echo "============================================================"
+          echo "Target: ${TARGET}"
+          echo "API:    ${API}"
+          echo "NDK:    ${ANDROID_NDK_HOME}"
+          echo "CC:     ${CC}"
+          echo "CXX:    ${CXX}"
+          echo ""
+
+          "$CC" --version
+          "$CXX" --version
+
           chmod +x autogen.sh share/genbuild.sh || true
 
-          # autogen.sh runs autoreconf --force, which refreshes config.sub
-          # (the one in the repo may be too old to know "android").
           ./autogen.sh
+
           chmod +x configure || true
 
           ./configure \
-            --host="${TARGET}" --build=x86_64-pc-linux-gnu \
+            --host="${TARGET}" \
+            --build=x86_64-pc-linux-gnu \
             --prefix="${PWD}/android-out" \
-            --without-gui --disable-tests --disable-bench \
-            --disable-zmq --without-miniupnpc \
+            --without-gui \
+            --disable-tests \
+            --disable-bench \
+            --disable-zmq \
+            --without-miniupnpc \
             --enable-reduce-exports \
-            --with-boost="$P" --with-boost-libdir="$P/lib" \
+            --with-boost="$P" \
+            --with-boost-libdir="$P/lib" \
             BDB_CFLAGS="-I$P/include" \
             BDB_LIBS="-L$P/lib -ldb_cxx-4.8" \
             EVENT_CFLAGS="-I$P/include" \
@@ -1257,39 +1359,59 @@ jobs:
             CRYPTO_CFLAGS="-I$P/include" \
             CRYPTO_LIBS="-L$P/lib -lcrypto" \
             CPPFLAGS="-I$P/include" \
-            CFLAGS="-O2 -pipe -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-            CXXFLAGS="-std=c++14 -O2 -pipe -Wno-deprecated-declarations -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-            LDFLAGS="-L$P/lib -static-libstdc++" 2>&1 | tee configure.console \
+            CFLAGS="-O2 -pipe -fPIC -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            CXXFLAGS="-std=c++14 -O2 -pipe -fPIC -Wno-deprecated-declarations -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            LDFLAGS="-L$P/lib -static-libstdc++" \
+            2>&1 | tee configure.console \
             || (
+              echo ""
               echo "============================================================"
-              echo "configure FAILED. Last 40 lines of configure output:"
+              echo "configure failed"
               echo "============================================================"
-              tail -n 40 configure.console
-              echo "============================================================"
-              echo "error lines from config.log:"
+              tail -n 80 configure.console
               grep -nE 'configure:[0-9]+: error:|^configure: error:' config.log || true
               false
             )
 
           make ${MAKEJOBS} \
             || (
-              echo "Build failure. Verbose build follows."
+              echo ""
+              echo "============================================================"
+              echo "Android build failure - verbose build follows"
+              echo "============================================================"
               make V=1
               false
             )
+
+          echo ""
+          echo "============================================================"
+          echo "Stripping Android ARM64 binaries"
+          echo "============================================================"
 
           "${STRIP}" --strip-unneeded \
             src/minersworldcoind \
             src/minersworldcoin-cli \
             src/minersworldcoin-tx
 
-          file src/minersworldcoind src/minersworldcoin-cli src/minersworldcoin-tx || true
-          ls -lh src/minersworldcoind src/minersworldcoin-cli src/minersworldcoin-tx
+          echo ""
+          echo "============================================================"
+          echo "Android ARM64 binary information"
+          echo "============================================================"
 
-      - name: Upload Android ARM64 artifacts
+          file \
+            src/minersworldcoind \
+            src/minersworldcoin-cli \
+            src/minersworldcoin-tx || true
+
+          ls -lh \
+            src/minersworldcoind \
+            src/minersworldcoin-cli \
+            src/minersworldcoin-tx
+
+      - name: Upload Android ARM64 / Termux artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: minersworldcoin-${{ github.sha }}-android-arm64
+          name: minersworldcoin-${{ github.sha }}-android-arm64-termux
           if-no-files-found: error
           path: |
             src/minersworldcoind
