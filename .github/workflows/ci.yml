@@ -426,6 +426,7 @@ jobs:
               pkg-config \
               ccache \
               librsvg \
+              makedepend \
               python
 
             BREW_PYTHON="$(brew --prefix python)/bin"
@@ -830,6 +831,16 @@ jobs:
           chmod -R +x depends || true
           chmod +x share/genbuild.sh
 
+          # ARM64 Windows: configure.ac only maps i?86 and x86_64 to
+          # WINDOWS_BITS (used for the NSIS installer) and errors out on
+          # anything else. Treat aarch64 as 64-bit. Permanent fix: make this
+          # same change in configure.ac and drop this block.
+          if [[ "${{ matrix.host }}" == "aarch64-w64-mingw32" ]]; then
+            sed -i 's/x86_64-\*)\([[:space:]]*\)WINDOWS_BITS=64/x86_64-*|aarch64-*)\1WINDOWS_BITS=64/' configure.ac
+            echo "WINDOWS_BITS lines in configure.ac after patch:"
+            grep -n "WINDOWS_BITS" configure.ac || true
+            grep -q 'aarch64-\*)' configure.ac || { echo "ERROR: configure.ac patch did not apply"; exit 1; }
+          fi
           SHORT_COMMIT=$(echo "$GIT_COMMIT_ID" | cut -c1-7)
 
           depends/${{ matrix.host }}/native/bin/ccache --max-size="$CCACHE_SIZE"
@@ -1072,6 +1083,9 @@ jobs:
           tar xzf db.tar.gz
           (
             cd db-4.8.30.NC
+            # The BDB tarball extracts files read-only; make them writable
+            # so we can patch atomic.h and overwrite config.sub/config.guess.
+            chmod -R u+w .
             # clang: avoid the __atomic_compare_exchange name clash.
             # (4.8.x keeps this at dbinc/atomic.h; src/dbinc is a 5.x layout.)
             sed -i 's/__atomic_compare_exchange/__atomic_compare_exchange_db/g' dbinc/atomic.h
