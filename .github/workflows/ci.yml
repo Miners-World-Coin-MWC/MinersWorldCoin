@@ -37,6 +37,7 @@ jobs:
           - riscv64-linux
           - x86_64-linux
           - x86_64-linux-musl
+          - aarch64-win
           - x86_64-macos
           - aarch64-macos
           - x86_64-win
@@ -181,6 +182,50 @@ jobs:
             goal: install
 
           # ============================================================
+          # ARM64 Windows (EXPERIMENTAL)
+          #
+          # GCC mingw cannot target Windows ARM64, so this uses the
+          # llvm-mingw clang toolchain. The depends system has no native
+          # aarch64-mingw support, so postinstall creates small wrapper
+          # scripts named aarch64-w64-mingw32-gcc / g++ (+ -posix) that
+          # call clang, which is what depends looks for.
+          #
+          # Daemon only for now: no Qt, no wallet. Remove NO_WALLET=1 /
+          # --disable-wallet once the toolchain builds cleanly.
+          #
+          # experimental: true => failure does NOT fail the workflow.
+          # Remove that line when it is stable.
+          # ============================================================
+          - name: aarch64-win
+            host: aarch64-w64-mingw32
+            container: ubuntu:20.04
+            experimental: true
+            packages: python3 bc xz-utils curl ca-certificates
+            postinstall: |
+              set -e
+              LLVM_MINGW=llvm-mingw-20240619-ucrt-ubuntu-20.04-x86_64
+              curl -fsSL -o /tmp/llvm-mingw.tar.xz \
+                "https://github.com/mstorsjo/llvm-mingw/releases/download/20240619/${LLVM_MINGW}.tar.xz"
+              tar -C /opt -xf /tmp/llvm-mingw.tar.xz
+              T=/opt/${LLVM_MINGW}/bin
+              for n in gcc gcc-posix; do
+                printf '#!/bin/sh\nexec %s/aarch64-w64-mingw32-clang "$@"\n' "$T" > "$T/aarch64-w64-mingw32-$n"
+                chmod +x "$T/aarch64-w64-mingw32-$n"
+              done
+              for n in g++ g++-posix; do
+                printf '#!/bin/sh\nexec %s/aarch64-w64-mingw32-clang++ "$@"\n' "$T" > "$T/aarch64-w64-mingw32-$n"
+                chmod +x "$T/aarch64-w64-mingw32-$n"
+              done
+              echo "$T" >> "$GITHUB_PATH"
+              "$T/aarch64-w64-mingw32-clang" --version
+            run-bench: false
+            check-security: false
+            check-symbols: false
+            dep-opts: 'NO_QT=1 NO_WALLET=1 NO_UPNP=1 openssl_config_opts_aarch64_mingw32="mingw64 no-asm"'
+            config-opts: "--without-gui --disable-wallet --disable-tests --disable-bench"
+            goal: install
+
+          # ============================================================
           # Intel macOS
           #
           # EXISTING / ORIGINAL BUILD
@@ -235,6 +280,9 @@ jobs:
             dep-opts: ""
             config-opts: "--with-gui=qt5 --disable-tests"
             goal: deploy
+
+    # Matrix entries marked `experimental: true` never fail the workflow.
+    continue-on-error: ${{ matrix.experimental == true }}
 
     runs-on: ${{ matrix.runs-on || 'ubuntu-22.04' }}
 
@@ -903,9 +951,9 @@ jobs:
 
           SHORT_COMMIT="$(echo "$GIT_COMMIT_ID" | cut -c1-7)"
 
-          chmod +x autogen.sh share/genbuild.sh || true
+          git config --global --add safe.directory /home/src || true
+
           ./autogen.sh
-          chmod +x configure || true
 
           ./configure \
             --without-gui \
@@ -928,9 +976,11 @@ jobs:
       - name: Build in Termux
         shell: bash
         run: |
-          # The Termux image runs as an unprivileged user, so make the
-          # checkout writable for it.
-          chmod -R a+rwX "$GITHUB_WORKSPACE"
+          # The Termux image runs as an unprivileged user that does NOT own
+          # the checkout, so chmod must happen here on the host (as owner).
+          # a+rwx (not a+rwX) so autogen.sh, genbuild.sh, leveldb scripts
+          # etc. are all executable.
+          chmod -R a+rwx "$GITHUB_WORKSPACE"
 
           docker run --rm \
             -e GIT_COMMIT_ID="${{ github.sha }}" \
