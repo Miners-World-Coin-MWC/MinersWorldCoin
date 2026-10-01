@@ -214,16 +214,24 @@ jobs:
               tar -C /opt -xf /tmp/llvm-mingw.tar.xz
               echo "Extracted."
               T=/opt/${LLVM_MINGW}/bin
-              for n in gcc gcc-posix; do
-                printf '#!/bin/sh\nexec %s/aarch64-w64-mingw32-clang "$@"\n' "$T" > "$T/aarch64-w64-mingw32-$n"
-                chmod +x "$T/aarch64-w64-mingw32-$n"
-              done
-              for n in g++ g++-posix; do
-                printf '#!/bin/sh\nexec %s/aarch64-w64-mingw32-clang++ "$@"\n' "$T" > "$T/aarch64-w64-mingw32-$n"
-                chmod +x "$T/aarch64-w64-mingw32-$n"
-              done
+              # llvm-mingw already ships aarch64-w64-mingw32-gcc / g++ as
+              # symlinks to its clang-target-wrapper. NEVER write through
+              # those (an earlier version overwrote the wrapper with a script
+              # that exec'd itself = infinite loop). Only create names that
+              # do not exist yet.
+              mk() {
+                if [ ! -e "$T/$1" ] && [ ! -L "$T/$1" ]; then
+                  printf '#!/bin/sh\nexec %s/%s "$@"\n' "$T" "$2" > "$T/$1"
+                  chmod +x "$T/$1"
+                fi
+              }
+              mk aarch64-w64-mingw32-gcc aarch64-w64-mingw32-clang
+              mk aarch64-w64-mingw32-gcc-posix aarch64-w64-mingw32-clang
+              mk aarch64-w64-mingw32-g++ aarch64-w64-mingw32-clang++
+              mk aarch64-w64-mingw32-g++-posix aarch64-w64-mingw32-clang++
               echo "$T" >> "$GITHUB_PATH"
-              "$T/aarch64-w64-mingw32-clang" --version
+              timeout 30 "$T/aarch64-w64-mingw32-clang" --version
+              timeout 30 "$T/aarch64-w64-mingw32-gcc-posix" --version
             run-bench: false
             check-security: false
             check-symbols: false
@@ -288,7 +296,7 @@ jobs:
             sdk: 11.3
             sdk-url: "https://github.com/phracker/MacOSX-SDKs/releases/download/11.3"
             sdk-filename: "MacOSX11.3.sdk.tar.xz"
-            sdk-shasum: "CD4F08A75577145B8F05245A2975F7C81401D75E9535DCFFBB879EE1DEEFCBF4"
+            sdk-shasum: "cd4f08a75577145b8f05245a2975f7c81401d75e9535dcffbb879ee1deefcbf4"
 
     # Matrix entries marked `experimental: true` never fail the workflow.
     continue-on-error: ${{ matrix.experimental == true }}
@@ -586,17 +594,30 @@ jobs:
 
           verify_sha256() {
             local file="$1"
-            local expected="$2"
+            # Normalise to lowercase: sha256sum/shasum print lowercase hex and
+            # compare case-sensitively, so an uppercase value always "fails".
+            local expected
+            expected="$(echo "$2" | tr 'A-F' 'a-f')"
 
             if [[ ! -f "$file" ]]; then
               return 1
             fi
 
+            local actual
             if command -v sha256sum >/dev/null 2>&1; then
-              echo "$expected  $file" | sha256sum -c >/dev/null 2>&1
+              actual="$(sha256sum "$file" | awk '{print $1}')"
             else
-              echo "$expected  $file" | shasum -a 256 -c >/dev/null 2>&1
+              actual="$(shasum -a 256 "$file" | awk '{print $1}')"
             fi
+
+            if [[ "$actual" == "$expected" ]]; then
+              return 0
+            fi
+
+            echo "  checksum mismatch for $file"
+            echo "    expected: $expected"
+            echo "    actual:   $actual"
+            return 1
           }
 
           download_file() {
@@ -900,28 +921,33 @@ jobs:
             ${{ matrix.name }}-bench.csv
 
   # ==============================================================
-  # Termux (Android, aarch64)
+  # Android ARM64 / Termux (EXPERIMENTAL)
   #
-  # Builds the daemon / cli / tx inside the official Termux docker
-  # image on a NATIVE arm64 runner (no QEMU), so the binaries are the
-  # same ones people get when compiling in Termux on their phone.
+  # Same approach as the Sugarmaker CI: Android NDK cross-compile on a
+  # normal Ubuntu runner, producing standalone native ARM64 executables
+  # (minersworldcoind / -cli / -tx) that run in Termux. Not an APK.
   #
-  # NOT a matrix entry on purpose: Termux is not a normal glibc
-  # container, so it can't be used as a job `container:` (the runner
-  # needs node + /bin/bash inside it). We use `docker run` instead.
+  # The wallet needs libraries Sugarmaker does not, so they are
+  # cross-built first as STATIC libraries and cached:
+  #   OpenSSL 1.1.1w, libevent 2.1.12, Berkeley DB 4.8.30, Boost 1.74
   #
-  # No GUI (Qt is not realistic on Termux).
-  # Wallet is enabled only if Termux provides Berkeley DB (libdb);
-  # otherwise it falls back to --disable-wallet and says so.
+  # API 24 (Android 7.0, Termux's own minimum): the wallet's net code
+  # uses getifaddrs(), which Android only provides from API 24.
   #
-  # continue-on-error is ON while this is experimental so it never
-  # turns the whole workflow red. Remove it once it's stable.
+  # No GUI, no ZMQ, no UPnP. Wallet ENABLED (BDB 4.8.30, so wallet.dat
+  # stays compatible with your other builds).
+  #
+  # continue-on-error is ON while this is experimental.
   # ==============================================================
-  termux-aarch64:
-    name: termux-aarch64
-    runs-on: ubuntu-24.04-arm
+  android-arm64:
+    name: android-arm64
+    runs-on: ubuntu-22.04
     continue-on-error: true
-    timeout-minutes: 180
+    timeout-minutes: 120
+    env:
+      API: "24"
+      TARGET: aarch64-linux-android
+      MAKEJOBS: "-j3"
 
     steps:
       - name: Checkout
@@ -930,124 +956,227 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Write Termux build script
+      - name: Setup Java 17 for Android build
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+
+      - name: Install Android NDK
         shell: bash
         run: |
-          cat > termux-build.sh <<'EOF'
-          #!/data/data/com.termux/files/usr/bin/bash
           set -e
 
-          echo "============================================================"
-          echo "Termux environment"
-          echo "============================================================"
-          uname -a
-          echo "PREFIX=$PREFIX"
+          sdkmanager --install "ndk;29.0.14206865"
 
-          pkg update -y
-          pkg upgrade -y
-          pkg install -y \
-            git build-essential clang make automake autoconf libtool \
-            binutils pkg-config python \
-            boost libevent openssl libzmq
+          echo "ANDROID_NDK_HOME=${ANDROID_SDK_ROOT}/ndk/29.0.14206865" >> "$GITHUB_ENV"
 
-          # ----------------------------------------------------------
-          # Wallet support needs Berkeley DB. Use it if Termux has it.
-          # ----------------------------------------------------------
-          WALLET_OPTS="--disable-wallet"
-          BDB_ARGS=()
-          if pkg install -y libdb; then
-            echo "---- libdb files ----"
-            find "$PREFIX/include" "$PREFIX/lib" -iname '*db_cxx*' -o -iname 'libdb*' 2>/dev/null | head -n 30
-            DBH="$(find "$PREFIX/include" -name db_cxx.h 2>/dev/null | head -n 1)"
-            DBL="$(ls "$PREFIX/lib" 2>/dev/null | grep -E '^libdb_cxx.*\.(so|a)' | head -n 1)"
-            if [ -n "$DBH" ] && [ -n "$DBL" ]; then
-              DBL="${DBL#lib}"; DBL="${DBL%%.so*}"; DBL="${DBL%.a}"
-              WALLET_OPTS="--with-incompatible-bdb"
-              BDB_ARGS=("BDB_CFLAGS=-I$(dirname "$DBH")" "BDB_LIBS=-L$PREFIX/lib -l$DBL")
-              echo "libdb found ($DBH, -l$DBL): building WITH wallet"
-            else
-              echo "WARNING: libdb installed but db_cxx.h / libdb_cxx not found, building WITHOUT wallet"
-            fi
-          else
-            echo "WARNING: libdb not available, building WITHOUT wallet"
-          fi
-
-          SHORT_COMMIT="$(cut -c1-7 /home/src/.commit_id 2>/dev/null || true)"
-
-          git config --global --add safe.directory /home/src || true
-
-          # ----------------------------------------------------------
-          # Termux has no /bin/sh, /usr/bin/env, etc., so scripts with
-          # those shebangs fail with "bad interpreter". Rewrite them to
-          # point at $PREFIX, and tell autoconf which shell to use.
-          # Run once before autogen (autogen.sh, genbuild.sh, leveldb
-          # scripts) and once after (generated configure scripts).
-          # ----------------------------------------------------------
-          export CONFIG_SHELL="$PREFIX/bin/bash"
-          export SHELL="$PREFIX/bin/bash"
-
-          fix_shebangs() {
-            find . -path ./.git -prune -o -type f -size -1M -print | while IFS= read -r f; do
-              first=""
-              IFS= read -r first < "$f" 2>/dev/null || true
-              case "$first" in
-                '#!'*/bin/*) termux-fix-shebang "$f" 2>/dev/null || true ;;
-              esac
-            done
-          }
-
-          # autogen.sh calls `which`, which the Termux image doesn't ship.
-          if ! command -v which >/dev/null 2>&1; then
-            printf '#!%s/bin/sh\nfor c in "$@"; do command -v "$c" || exit 1; done\n' "$PREFIX" > "$PREFIX/bin/which"
-            chmod +x "$PREFIX/bin/which"
-          fi
-
-          fix_shebangs
-          bash ./autogen.sh
-          fix_shebangs
-
-          ./configure \
-            --without-gui \
-            --disable-tests \
-            --disable-bench \
-            --enable-reduce-exports \
-            $WALLET_OPTS \
-            "${BDB_ARGS[@]}" \
-            CFLAGS="-pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-            CXXFLAGS="-std=c++17 -pipe -O2 -Wno-deprecated-declarations -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-            || { echo "configure failed; dumping config.log"; cat config.log; echo "=== configure errors ==="; grep -n 'configure: error' config.log; exit 1; }
-
-          make -j3 || { echo "Build failure. Verbose build follows."; make V=1; exit 1; }
-
-          echo "============================================================"
-          echo "Built binaries"
-          echo "============================================================"
-          ls -lh src/minersworldcoind src/minersworldcoin-cli src/minersworldcoin-tx || true
-          EOF
-
-      - name: Build in Termux
+      - name: Install host build tools
         shell: bash
         run: |
-          echo -n "${{ github.sha }}" > "$GITHUB_WORKSPACE/.commit_id"
+          set -e
 
-          # The Termux image runs as an unprivileged user that does NOT own
-          # the checkout, so chmod must happen here on the host (as owner).
-          # a+rwx (not a+rwX) so autogen.sh, genbuild.sh, leveldb scripts
-          # etc. are all executable.
-          chmod -R a+rwx "$GITHUB_WORKSPACE"
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential autoconf automake libtool pkg-config \
+            autotools-dev bsdmainutils python3 curl ca-certificates bzip2
 
-          docker run --rm \
-            -e GIT_COMMIT_ID="${{ github.sha }}" \
-            -v "$GITHUB_WORKSPACE":/home/src \
-            -w /home/src \
-            termux/termux-docker:aarch64 \
-            bash termux-build.sh
+      - name: Cache Android dependencies
+        id: deps-cache
+        uses: actions/cache@v4
+        with:
+          path: android-deps
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v1
 
-      - name: Upload Termux artifacts
+      - name: Build static dependencies (OpenSSL, libevent, BDB 4.8.30, Boost)
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 60
+        shell: bash
+        run: |
+          set -e
+
+          P="$GITHUB_WORKSPACE/android-deps"
+          mkdir -p "$P" build-deps
+          cd build-deps
+
+          TOOLCHAIN="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64"
+          export PATH="${TOOLCHAIN}/bin:${PATH}"
+
+          fetch() {
+            curl -fL -sS --retry 4 --retry-delay 5 \
+              --connect-timeout 20 --max-time 900 \
+              -o "$2" "$1"
+          }
+
+          # ---------------- OpenSSL 1.1.1w ----------------
+          echo "============================================================"
+          echo "OpenSSL 1.1.1w"
+          echo "============================================================"
+          fetch https://www.openssl.org/source/old/1.1.1/openssl-1.1.1w.tar.gz openssl.tar.gz
+          tar xzf openssl.tar.gz
+          (
+            cd openssl-1.1.1w
+            export ANDROID_NDK_ROOT="${ANDROID_NDK_HOME}"
+            ./Configure android-arm64 -D__ANDROID_API__="${API}" \
+              no-shared no-tests no-comp \
+              --prefix="$P" --openssldir="$P/ssl"
+            make ${MAKEJOBS} build_libs
+            make install_dev
+          )
+
+          # Toolchain for everything below.
+          export CC="${TOOLCHAIN}/bin/${TARGET}${API}-clang"
+          export CXX="${TOOLCHAIN}/bin/${TARGET}${API}-clang++"
+          export AR="${TOOLCHAIN}/bin/llvm-ar"
+          export RANLIB="${TOOLCHAIN}/bin/llvm-ranlib"
+          export STRIP="${TOOLCHAIN}/bin/llvm-strip"
+
+          # ---------------- libevent 2.1.12 ----------------
+          echo "============================================================"
+          echo "libevent 2.1.12"
+          echo "============================================================"
+          fetch https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz libevent.tar.gz
+          tar xzf libevent.tar.gz
+          (
+            cd libevent-2.1.12-stable
+            ./configure \
+              --host="${TARGET}" --build=x86_64-pc-linux-gnu \
+              --prefix="$P" \
+              --disable-shared --enable-static --with-pic \
+              --disable-openssl --disable-samples --disable-libevent-regress
+            make ${MAKEJOBS}
+            make install
+          )
+
+          # ---------------- Berkeley DB 4.8.30 ----------------
+          echo "============================================================"
+          echo "Berkeley DB 4.8.30"
+          echo "============================================================"
+          fetch https://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz db.tar.gz
+          echo "12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef  db.tar.gz" | sha256sum -c
+          tar xzf db.tar.gz
+          (
+            cd db-4.8.30.NC
+            # clang: avoid the __atomic_compare_exchange name clash.
+            sed -i 's/__atomic_compare_exchange/__atomic_compare_exchange_db/g' src/dbinc/atomic.h
+            # BDB ships a 2008 config.sub that rejects "android".
+            cp /usr/share/misc/config.sub /usr/share/misc/config.guess dist/
+            cd build_unix
+            ../dist/configure \
+              --host="${TARGET}" --build=x86_64-pc-linux-gnu \
+              --prefix="$P" \
+              --enable-cxx --disable-shared --with-pic \
+              --with-mutex=POSIX/pthreads
+            make ${MAKEJOBS} libdb_cxx-4.8.a libdb-4.8.a
+            make install_lib install_include
+          )
+
+          # ---------------- Boost 1.74.0 ----------------
+          echo "============================================================"
+          echo "Boost 1.74.0"
+          echo "============================================================"
+          fetch https://archives.boost.io/release/1.74.0/source/boost_1_74_0.tar.bz2 boost.tar.bz2
+          tar xjf boost.tar.bz2
+          (
+            cd boost_1_74_0
+            ./bootstrap.sh --with-toolset=gcc
+            cat > user-config.jam <<EOF
+          using clang : android : ${CXX} : <archiver>${AR} <ranlib>${RANLIB} <compileflags>-fPIC ;
+          EOF
+            ./b2 ${MAKEJOBS} --user-config=user-config.jam --layout=system \
+              --prefix="$P" \
+              toolset=clang-android target-os=android \
+              architecture=arm address-model=64 \
+              link=static variant=release threading=multi \
+              --with-system --with-filesystem --with-thread \
+              --with-chrono --with-program_options \
+              install
+          )
+
+          echo "============================================================"
+          echo "Dependency prefix contents"
+          echo "============================================================"
+          ls -lh "$P/lib" "$P/include" | head -n 80
+
+      - name: Build MinersWorldCoin for Android ARM64
+        shell: bash
+        run: |
+          set -e
+
+          P="$GITHUB_WORKSPACE/android-deps"
+          TOOLCHAIN="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64"
+          export PATH="${TOOLCHAIN}/bin:${PATH}"
+
+          export CC="${TOOLCHAIN}/bin/${TARGET}${API}-clang"
+          export CXX="${TOOLCHAIN}/bin/${TARGET}${API}-clang++"
+          export AR="${TOOLCHAIN}/bin/llvm-ar"
+          export RANLIB="${TOOLCHAIN}/bin/llvm-ranlib"
+          export STRIP="${TOOLCHAIN}/bin/llvm-strip"
+
+          SHORT_COMMIT="$(echo "${{ github.sha }}" | cut -c1-7)"
+
+          chmod +x autogen.sh share/genbuild.sh || true
+
+          # autogen.sh runs autoreconf --force, which refreshes config.sub
+          # (the one in the repo may be too old to know "android").
+          ./autogen.sh
+          chmod +x configure || true
+
+          ./configure \
+            --host="${TARGET}" --build=x86_64-pc-linux-gnu \
+            --prefix="${PWD}/android-out" \
+            --without-gui --disable-tests --disable-bench \
+            --disable-zmq --without-miniupnpc \
+            --enable-reduce-exports \
+            --with-boost="$P" --with-boost-libdir="$P/lib" \
+            BDB_CFLAGS="-I$P/include" \
+            BDB_LIBS="-L$P/lib -ldb_cxx-4.8" \
+            EVENT_CFLAGS="-I$P/include" \
+            EVENT_LIBS="-L$P/lib -levent_core" \
+            EVENT_PTHREADS_CFLAGS="-I$P/include" \
+            EVENT_PTHREADS_LIBS="-L$P/lib -levent_pthreads -levent_core" \
+            CRYPTO_CFLAGS="-I$P/include" \
+            CRYPTO_LIBS="-L$P/lib -lcrypto" \
+            CPPFLAGS="-I$P/include" \
+            CFLAGS="-O2 -pipe -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            CXXFLAGS="-std=c++14 -O2 -pipe -Wno-deprecated-declarations -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            LDFLAGS="-L$P/lib -static-libstdc++" \
+            || (
+              echo "============================================================"
+              echo "configure failed; dumping config.log"
+              echo "============================================================"
+              cat config.log
+              echo "============================================================"
+              echo "configure errors:"
+              grep -n 'configure: error' config.log || true
+              false
+            )
+
+          make ${MAKEJOBS} \
+            || (
+              echo "Build failure. Verbose build follows."
+              make V=1
+              false
+            )
+
+          "${STRIP}" --strip-unneeded \
+            src/minersworldcoind \
+            src/minersworldcoin-cli \
+            src/minersworldcoin-tx
+
+          file src/minersworldcoind src/minersworldcoin-cli src/minersworldcoin-tx || true
+          ls -lh src/minersworldcoind src/minersworldcoin-cli src/minersworldcoin-tx
+
+      - name: Upload Android ARM64 artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: minersworldcoin-${{ github.sha }}-termux-aarch64
-          if-no-files-found: warn
+          name: minersworldcoin-${{ github.sha }}-android-arm64
+          if-no-files-found: error
           path: |
             src/minersworldcoind
             src/minersworldcoin-cli
