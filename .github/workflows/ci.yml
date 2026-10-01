@@ -1246,6 +1246,11 @@ jobs:
 
           # ============================================================
           # Boost 1.74.0
+          #
+          # IMPORTANT:
+          # Boost.Build (b2) is a HOST executable and must be built for
+          # the Ubuntu x86_64 runner. The Boost libraries themselves are
+          # then cross-compiled for Android ARM64 using Clang/NDK.
           # ============================================================
 
           fetch \
@@ -1257,7 +1262,41 @@ jobs:
           (
             cd boost_1_74_0
 
+            # ------------------------------------------------------------
+            # Bootstrap Boost.Build using the HOST compiler.
+            #
+            # CC/CXX currently point at the Android NDK compiler, so
+            # temporarily remove them. Otherwise bootstrap can produce
+            # an Android ARM64 b2 which cannot execute on the runner.
+            # ------------------------------------------------------------
+
+            HOST_CC="${CC:-}"
+            HOST_CXX="${CXX:-}"
+            HOST_AR="${AR:-}"
+            HOST_RANLIB="${RANLIB:-}"
+
+            unset CC
+            unset CXX
+            unset AR
+            unset RANLIB
+
             ./bootstrap.sh --with-toolset=gcc
+
+            # Restore Android cross compiler variables.
+            export CC="$HOST_CC"
+            export CXX="$HOST_CXX"
+            export AR="$HOST_AR"
+            export RANLIB="$HOST_RANLIB"
+
+            # Verify that b2 is a HOST executable before attempting to
+            # use it for the Android cross-build.
+            file ./b2
+
+            ./b2 --version
+
+            # ------------------------------------------------------------
+            # Android ARM64 Boost toolset
+            # ------------------------------------------------------------
 
             cat > user-config.jam <<EOF
           using clang : android : ${CXX} :
@@ -1265,6 +1304,10 @@ jobs:
             <ranlib>${RANLIB}
             <compileflags>-fPIC ;
           EOF
+
+            # ------------------------------------------------------------
+            # Cross-compile Boost libraries for Android ARM64.
+            # ------------------------------------------------------------
 
             ./b2 \
               ${MAKEJOBS} \
@@ -1275,7 +1318,9 @@ jobs:
               target-os=android \
               architecture=arm \
               address-model=64 \
+              binary-format=elf \
               link=static \
+              runtime-link=static \
               variant=release \
               threading=multi \
               --with-system \
@@ -1285,7 +1330,7 @@ jobs:
               --with-program_options \
               install
           )
-
+              
           echo ""
           echo "============================================================"
           echo "Android dependency build complete"
