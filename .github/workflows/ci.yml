@@ -1007,41 +1007,57 @@ jobs:
             dist/*.app
             ${{ matrix.name }}-bench.csv
 
+    # ==============================================================
+  # Android ARM64 / Termux
+  #
+  # Android NDK cross-compile on a normal Ubuntu runner, producing
+  # standalone native ARM64 executables:
+  #
+  #   minersworldcoind
+  #   minersworldcoin-cli
+  #   minersworldcoin-tx
+  #
+  # These are native Android/Termux binaries, NOT an APK.
+  #
+  # The wallet needs:
+  #   OpenSSL 1.1.1w
+  #   libevent 2.1.12
+  #   Berkeley DB 4.8.30
+  #   Boost 1.74
+  #
+  # API 24 is required because the wallet networking code uses
+  # getifaddrs(), which Android provides from API 24.
+  #
+  # No GUI, no ZMQ, no UPnP.
+  # Wallet ENABLED.
   # ==============================================================
-  # Android ARM64 / Termux (EXPERIMENTAL)
-  #
-  # Same approach as the Sugarmaker CI: Android NDK cross-compile on a
-  # normal Ubuntu runner, producing standalone native ARM64 executables
-  # (minersworldcoind / -cli / -tx) that run in Termux. Not an APK.
-  #
-  # The wallet needs libraries Sugarmaker does not, so they are
-  # cross-built first as STATIC libraries and cached:
-  #   OpenSSL 1.1.1w, libevent 2.1.12, Berkeley DB 4.8.30, Boost 1.74
-  #
-  # API 24 (Android 7.0, Termux's own minimum): the wallet's net code
-  # uses getifaddrs(), which Android only provides from API 24.
-  #
-  # No GUI, no ZMQ, no UPnP. Wallet ENABLED (BDB 4.8.30, so wallet.dat
-  # stays compatible with your other builds).
-  #
-  # continue-on-error is ON while this is experimental.
-  # ==============================================================
+
   android-arm64:
     name: android-arm64
     runs-on: ubuntu-22.04
     continue-on-error: false
     timeout-minutes: 120
+
     env:
       API: "24"
       TARGET: aarch64-linux-android
       MAKEJOBS: "-j3"
 
     steps:
+
+      # ============================================================
+      # Checkout
+      # ============================================================
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
+
+      # ============================================================
+      # Java
+      # ============================================================
 
       - name: Setup Java 17 for Android build
         uses: actions/setup-java@v4
@@ -1049,10 +1065,18 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # ============================================================
+      # Android SDK
+      # ============================================================
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
           packages: 'platform-tools'
+
+      # ============================================================
+      # Android NDK
+      # ============================================================
 
       - name: Install Android NDK
         shell: bash
@@ -1062,6 +1086,10 @@ jobs:
           sdkmanager --install "ndk;29.0.14206865"
 
           echo "ANDROID_NDK_HOME=${ANDROID_SDK_ROOT}/ndk/29.0.14206865" >> "$GITHUB_ENV"
+
+      # ============================================================
+      # Host build tools
+      # ============================================================
 
       - name: Install host build tools
         shell: bash
@@ -1084,12 +1112,27 @@ jobs:
             bzip2 \
             unzip
 
+      # ============================================================
+      # Android dependency cache
+      #
+      # v3 intentionally invalidates the previous Boost cache.
+      # ============================================================
+
       - name: Restore Android dependencies cache
         id: deps-cache
         uses: actions/cache/restore@v4
         with:
           path: android-deps
-          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v2
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v3
+
+      # ============================================================
+      # Build static Android dependencies
+      #
+      # OpenSSL
+      # libevent
+      # Berkeley DB
+      # Boost
+      # ============================================================
 
       - name: Build static dependencies (OpenSSL, libevent, BDB 4.8.30, Boost)
         if: steps.deps-cache.outputs.cache-hit != 'true'
@@ -1099,13 +1142,19 @@ jobs:
           set -e
 
           P="$GITHUB_WORKSPACE/android-deps"
-          mkdir -p "$P" build-deps
+
+          mkdir -p "$P"
+          mkdir -p build-deps
 
           cd build-deps
 
           TOOLCHAIN="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64"
 
           export PATH="${TOOLCHAIN}/bin:${PATH}"
+
+          # ----------------------------------------------------------
+          # Download helper
+          # ----------------------------------------------------------
 
           fetch() {
             curl \
@@ -1119,9 +1168,9 @@ jobs:
               "$1"
           }
 
-          # ============================================================
+          # ==========================================================
           # OpenSSL 1.1.1w
-          # ============================================================
+          # ==========================================================
 
           fetch \
             https://www.openssl.org/source/old/1.1.1/openssl-1.1.1w.tar.gz \
@@ -1147,9 +1196,9 @@ jobs:
             make install_dev
           )
 
-          # ============================================================
+          # ==========================================================
           # Android compiler/toolchain
-          # ============================================================
+          # ==========================================================
 
           export CC="${TOOLCHAIN}/bin/${TARGET}${API}-clang"
           export CXX="${TOOLCHAIN}/bin/${TARGET}${API}-clang++"
@@ -1157,12 +1206,23 @@ jobs:
           export RANLIB="${TOOLCHAIN}/bin/llvm-ranlib"
           export STRIP="${TOOLCHAIN}/bin/llvm-strip"
 
+          echo "============================================================"
+          echo "Android compiler"
+          echo "============================================================"
+          echo "CC:     ${CC}"
+          echo "CXX:    ${CXX}"
+          echo "AR:     ${AR}"
+          echo "RANLIB: ${RANLIB}"
+          echo "TARGET: ${TARGET}"
+          echo "API:    ${API}"
+          echo ""
+
           "$CC" --version
           "$CXX" --version
 
-          # ============================================================
+          # ==========================================================
           # libevent 2.1.12
-          # ============================================================
+          # ==========================================================
 
           fetch \
             https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz \
@@ -1188,9 +1248,9 @@ jobs:
             make install
           )
 
-          # ============================================================
+          # ==========================================================
           # Berkeley DB 4.8.30
-          # ============================================================
+          # ==========================================================
 
           fetch \
             https://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz \
@@ -1225,7 +1285,9 @@ jobs:
                 --include='*.cpp' || true
             } | wc -l
 
-            cp /usr/share/misc/config.sub /usr/share/misc/config.guess dist/
+            cp /usr/share/misc/config.sub \
+              /usr/share/misc/config.guess \
+              dist/
 
             cd build_unix
 
@@ -1241,17 +1303,20 @@ jobs:
               CXXFLAGS="-std=c++11 -O2 -fPIC"
 
             make ${MAKEJOBS} libdb_cxx-4.8.a libdb-4.8.a
+
             make install_lib install_include
           )
 
-          # ============================================================
+          # ==========================================================
           # Boost 1.74.0
           #
           # IMPORTANT:
-          # Boost.Build (b2) is a HOST executable and must be built for
-          # the Ubuntu x86_64 runner. The Boost libraries themselves are
-          # then cross-compiled for Android ARM64 using Clang/NDK.
-          # ============================================================
+          #
+          # b2 MUST be a HOST x86_64 executable.
+          #
+          # The Boost libraries themselves are cross-compiled for
+          # Android ARM64.
+          # ==========================================================
 
           fetch \
             https://archives.boost.io/release/1.74.0/source/boost_1_74_0.tar.bz2 \
@@ -1262,52 +1327,90 @@ jobs:
           (
             cd boost_1_74_0
 
-            # ------------------------------------------------------------
-            # Bootstrap Boost.Build using the HOST compiler.
-            #
-            # CC/CXX currently point at the Android NDK compiler, so
-            # temporarily remove them. Otherwise bootstrap can produce
-            # an Android ARM64 b2 which cannot execute on the runner.
-            # ------------------------------------------------------------
+            # --------------------------------------------------------
+            # Save Android compiler environment.
+            # --------------------------------------------------------
 
-            HOST_CC="${CC:-}"
-            HOST_CXX="${CXX:-}"
-            HOST_AR="${AR:-}"
-            HOST_RANLIB="${RANLIB:-}"
+            ANDROID_CC="${CC}"
+            ANDROID_CXX="${CXX}"
+            ANDROID_AR="${AR}"
+            ANDROID_RANLIB="${RANLIB}"
+
+            # --------------------------------------------------------
+            # Bootstrap b2 using the HOST compiler.
+            #
+            # GitHub Actions runner is x86_64 Ubuntu.
+            # --------------------------------------------------------
 
             unset CC
             unset CXX
             unset AR
             unset RANLIB
 
+            echo "============================================================"
+            echo "Bootstrapping HOST Boost.Build"
+            echo "============================================================"
+
             ./bootstrap.sh --with-toolset=gcc
 
-            # Restore Android cross compiler variables.
-            export CC="$HOST_CC"
-            export CXX="$HOST_CXX"
-            export AR="$HOST_AR"
-            export RANLIB="$HOST_RANLIB"
+            # --------------------------------------------------------
+            # Restore Android compiler environment.
+            # --------------------------------------------------------
 
-            # Verify that b2 is a HOST executable before attempting to
-            # use it for the Android cross-build.
+            export CC="${ANDROID_CC}"
+            export CXX="${ANDROID_CXX}"
+            export AR="${ANDROID_AR}"
+            export RANLIB="${ANDROID_RANLIB}"
+
+            echo "============================================================"
+            echo "Verifying HOST b2"
+            echo "============================================================"
+
             file ./b2
 
             ./b2 --version
 
-            # ------------------------------------------------------------
-            # Android ARM64 Boost toolset
-            # ------------------------------------------------------------
+            # --------------------------------------------------------
+            # Verify that b2 is actually executable by the runner.
+            # --------------------------------------------------------
+
+            test -x ./b2
+
+            # ========================================================
+            # Boost Android Clang toolset
+            #
+            # Explicitly provide:
+            #
+            #   Android target triple
+            #   Android API level
+            #   ARM64 architecture
+            #   Android linker target
+            #
+            # This prevents Boost.Build from accidentally compiling
+            # the libraries for the host x86_64 environment.
+            # ========================================================
 
             cat > user-config.jam <<EOF
-          using clang : android : ${CXX} :
-            <archiver>${AR}
-            <ranlib>${RANLIB}
-            <compileflags>-fPIC ;
+          using clang : android : ${ANDROID_CXX} :
+            <compileflags>--target=${TARGET}${API}
+            <compileflags>-fPIC
+            <compileflags>-D__ANDROID_API__=${API}
+            <linkflags>--target=${TARGET}${API}
+            <archiver>${ANDROID_AR}
+            <ranlib>${ANDROID_RANLIB} ;
           EOF
 
-            # ------------------------------------------------------------
-            # Cross-compile Boost libraries for Android ARM64.
-            # ------------------------------------------------------------
+            echo ""
+            echo "============================================================"
+            echo "Boost Android user-config.jam"
+            echo "============================================================"
+
+            cat user-config.jam
+
+            echo ""
+            echo "============================================================"
+            echo "Boost Android cross-build"
+            echo "============================================================"
 
             ./b2 \
               ${MAKEJOBS} \
@@ -1323,14 +1426,25 @@ jobs:
               runtime-link=static \
               variant=release \
               threading=multi \
+              --without-python \
               --with-system \
               --with-filesystem \
               --with-thread \
               --with-chrono \
               --with-program_options \
               install
+
+            echo ""
+            echo "============================================================"
+            echo "Verifying Boost libraries"
+            echo "============================================================"
+
+            find "$P/lib" -maxdepth 1 -type f -name 'libboost*.a' -print | sort
+
+            echo ""
+            echo "Boost dependency build complete."
           )
-              
+
           echo ""
           echo "============================================================"
           echo "Android dependency build complete"
@@ -1338,12 +1452,20 @@ jobs:
 
           ls -lh "$P/lib" "$P/include" | head -n 100
 
+      # ============================================================
+      # Save Android dependency cache
+      # ============================================================
+
       - name: Save Android dependencies cache
         if: steps.deps-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: android-deps
-          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v2
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v3
+
+      # ============================================================
+      # Build MinersWorldCoin
+      # ============================================================
 
       - name: Build MinersWorldCoin for Android ARM64 / Termux
         shell: bash
@@ -1377,11 +1499,19 @@ jobs:
           "$CC" --version
           "$CXX" --version
 
+          # ==========================================================
+          # Autotools
+          # ==========================================================
+
           chmod +x autogen.sh share/genbuild.sh || true
 
           ./autogen.sh
 
           chmod +x configure || true
+
+          # ==========================================================
+          # Configure
+          # ==========================================================
 
           ./configure \
             --host="${TARGET}" \
@@ -1414,9 +1544,19 @@ jobs:
               echo "configure failed"
               echo "============================================================"
               tail -n 80 configure.console
-              grep -nE 'configure:[0-9]+: error:|^configure: error:' config.log || true
+
+              echo ""
+              echo "configure errors from config.log:"
+              grep -nE \
+                'configure:[0-9]+: error:|^configure: error:' \
+                config.log || true
+
               false
             )
+
+          # ==========================================================
+          # Build
+          # ==========================================================
 
           make ${MAKEJOBS} \
             || (
@@ -1424,9 +1564,15 @@ jobs:
               echo "============================================================"
               echo "Android build failure - verbose build follows"
               echo "============================================================"
+
               make V=1
+
               false
             )
+
+          # ==========================================================
+          # Strip binaries
+          # ==========================================================
 
           echo ""
           echo "============================================================"
@@ -1438,6 +1584,10 @@ jobs:
             src/minersworldcoin-cli \
             src/minersworldcoin-tx
 
+          # ==========================================================
+          # Verify binaries
+          # ==========================================================
+
           echo ""
           echo "============================================================"
           echo "Android ARM64 binary information"
@@ -1446,12 +1596,19 @@ jobs:
           file \
             src/minersworldcoind \
             src/minersworldcoin-cli \
-            src/minersworldcoin-tx || true
+            src/minersworldcoin-tx
+
+          echo ""
+          echo "Binary sizes:"
 
           ls -lh \
             src/minersworldcoind \
             src/minersworldcoin-cli \
             src/minersworldcoin-tx
+
+      # ============================================================
+      # Upload Termux binaries
+      # ============================================================
 
       - name: Upload Android ARM64 / Termux artifacts
         uses: actions/upload-artifact@v4
