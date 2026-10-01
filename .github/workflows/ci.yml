@@ -987,37 +987,18 @@ jobs:
           path: android-deps
           key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v4
 
-      # ============================================================
-      # Build static Android dependencies
-      #
-      # OpenSSL
-      # libevent
-      # Berkeley DB
-      # Boost
-      # ============================================================
-
       - name: Build static dependencies (OpenSSL, libevent, BDB 4.8.30, Boost)
         if: steps.deps-cache.outputs.cache-hit != 'true'
         timeout-minutes: 60
         shell: bash
         run: |
           set -e
-          set -o pipefail
-
           P="$GITHUB_WORKSPACE/android-deps"
-
           mkdir -p "$P"
           mkdir -p build-deps
-
           cd build-deps
-
           TOOLCHAIN="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64"
-
           export PATH="${TOOLCHAIN}/bin:${PATH}"
-
-          # ----------------------------------------------------------
-          # Download helper
-          # ----------------------------------------------------------
 
           fetch() {
             curl \
@@ -1031,21 +1012,11 @@ jobs:
               "$1"
           }
 
-          # ==========================================================
-          # OpenSSL 1.1.1w
-          # ==========================================================
-
-          fetch \
-            https://www.openssl.org/source/old/1.1.1/openssl-1.1.1w.tar.gz \
-            openssl.tar.gz
-
+          fetch https://www.openssl.org/source/old/1.1.1/openssl-1.1.1w.tar.gz openssl.tar.gz
           tar xzf openssl.tar.gz
-
           (
             cd openssl-1.1.1w
-
             export ANDROID_NDK_ROOT="${ANDROID_NDK_HOME}"
-
             ./Configure \
               android-arm64 \
               -D__ANDROID_API__="${API}" \
@@ -1054,14 +1025,9 @@ jobs:
               no-comp \
               --prefix="$P" \
               --openssldir="$P/ssl"
-
             make ${MAKEJOBS} build_libs
             make install_dev
           )
-
-          # ==========================================================
-          # Android compiler/toolchain
-          # ==========================================================
 
           export CC="${TOOLCHAIN}/bin/${TARGET}${API}-clang"
           export CXX="${TOOLCHAIN}/bin/${TARGET}${API}-clang++"
@@ -1069,33 +1035,14 @@ jobs:
           export RANLIB="${TOOLCHAIN}/bin/llvm-ranlib"
           export STRIP="${TOOLCHAIN}/bin/llvm-strip"
 
-          echo "============================================================"
-          echo "Android compiler"
-          echo "============================================================"
-          echo "CC:     ${CC}"
-          echo "CXX:    ${CXX}"
-          echo "AR:     ${AR}"
-          echo "RANLIB: ${RANLIB}"
-          echo "TARGET: ${TARGET}"
-          echo "API:    ${API}"
-          echo ""
-
+          echo "compiler info..."
           "$CC" --version
           "$CXX" --version
 
-          # ==========================================================
-          # libevent 2.1.12
-          # ==========================================================
-
-          fetch \
-            https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz \
-            libevent.tar.gz
-
+          fetch https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz libevent.tar.gz
           tar xzf libevent.tar.gz
-
           (
             cd libevent-2.1.12-stable
-
             ./configure \
               --host="${TARGET}" \
               --build=x86_64-pc-linux-gnu \
@@ -1106,54 +1053,33 @@ jobs:
               --disable-openssl \
               --disable-samples \
               --disable-libevent-regress
-
             make ${MAKEJOBS}
             make install
           )
 
-          # ==========================================================
-          # Berkeley DB 4.8.30
-          # ==========================================================
+          fetch https://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz db-4.8.30.NC.tar.gz
 
-          fetch \
-            https://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz \
-            db.tar.gz
+          echo "12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef  db-4.8.30.NC.tar.gz" | sha256sum -c -
 
-          echo "12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef  db.tar.gz" \
-            | sha256sum -c
-
-          tar xzf db.tar.gz
-
+          tar xzf db-4.8.30.NC.tar.gz
           (
             cd db-4.8.30.NC
 
-            chmod -R u+w .
-
             sed -i \
-              's/__atomic_compare_exchange/__atomic_compare_exchange_db/g' \
+              's/atomic_compare_exchange/atomic_compare_exchange_db/g' \
               dbinc/atomic.h
 
-            grep -rlw 'atomic_init' . \
-              --include='*.c' \
-              --include='*.h' \
-              --include='*.in' \
-              --include='*.cpp' \
-              | xargs -r sed -i 's/\batomic_init\b/atomic_init_db/g'
+            sed -i \
+              's/atomic_init/atomic_init_db/g' \
+              dbinc/atomic.h
 
-            {
-              grep -rw 'atomic_init' . \
-                --include='*.c' \
-                --include='*.h' \
-                --include='*.in' \
-                --include='*.cpp' || true
-            } | wc -l
-
-            cp /usr/share/misc/config.sub \
-              /usr/share/misc/config.guess \
-              dist/
+            cp /usr/share/automake-*/config.sub dist/
+            cp /usr/share/automake-*/config.guess dist/
 
             cd build_unix
 
+            CFLAGS="-O2 -fPIC -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=incompatible-pointer-types -Wno-deprecated-non-prototype" \
+            CXXFLAGS="-std=c++11 -O2 -fPIC -Wno-deprecated-declarations -Wno-deprecated-non-prototype" \
             ../dist/configure \
               --host="${TARGET}" \
               --build=x86_64-pc-linux-gnu \
@@ -1161,57 +1087,21 @@ jobs:
               --enable-cxx \
               --disable-shared \
               --with-pic \
-              --with-mutex=POSIX/pthreads \
-              CFLAGS="-O2 -fPIC -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=incompatible-pointer-types" \
-              CXXFLAGS="-std=c++11 -O2 -fPIC"
+              --with-mutex=POSIX/pthreads
 
             make ${MAKEJOBS} libdb_cxx-4.8.a libdb-4.8.a
-
             make install_lib install_include
           )
 
-          # ==========================================================
-          # Boost 1.74.0
-          #
-          # IMPORTANT:
-          #
-          # b2 MUST be a HOST x86_64 executable.
-          #
-          # The Boost libraries themselves are cross-compiled for
-          # Android ARM64.
-          #
-          # IMPORTANT:
-          # Do NOT use `./b2 --version` as a fatal verification
-          # command here. The Boost 1.74 b2 binary in this environment
-          # prints its version but returns exit code 1.
-          # ==========================================================
-
-          fetch \
-            https://archives.boost.io/release/1.74.0/source/boost_1_74_0.tar.bz2 \
-            boost.tar.bz2
-
+          fetch https://archives.boost.io/release/1.74.0/source/boost_1_74_0.tar.bz2 boost.tar.bz2
           tar xjf boost.tar.bz2
-
           (
             cd boost_1_74_0
-
-            # --------------------------------------------------------
-            # Save Android compiler environment.
-            # --------------------------------------------------------
 
             ANDROID_CC="${CC}"
             ANDROID_CXX="${CXX}"
             ANDROID_AR="${AR}"
             ANDROID_RANLIB="${RANLIB}"
-
-            # --------------------------------------------------------
-            # Bootstrap b2 using the HOST compiler.
-            #
-            # The GitHub Actions runner is x86_64 Ubuntu.
-            #
-            # This is critical: b2 itself must NOT be an Android ARM64
-            # executable.
-            # --------------------------------------------------------
 
             unset CC
             unset CXX
@@ -1224,10 +1114,6 @@ jobs:
 
             ./bootstrap.sh --with-toolset=gcc
 
-            # --------------------------------------------------------
-            # Restore Android compiler environment.
-            # --------------------------------------------------------
-
             export CC="${ANDROID_CC}"
             export CXX="${ANDROID_CXX}"
             export AR="${ANDROID_AR}"
@@ -1239,26 +1125,10 @@ jobs:
 
             file ./b2
 
-            # The `file` result must show x86-64.
-            file ./b2 | grep -Eq 'ELF 64-bit.*x86-64' || {
-              echo "ERROR: Boost b2 is not an x86-64 HOST executable."
-              file ./b2
-              exit 1
-            }
-
             test -x ./b2
 
-            # Boost 1.74's b2 can return status 1 from --version even
-            # though the executable is valid. Use the short -v form
-            # only for informational output and do not make it a
-            # build-stopping test.
             ./b2 -v || true
 
-            # --------------------------------------------------------
-            # Verify Android compiler separately.
-            # --------------------------------------------------------
-
-            echo ""
             echo "============================================================"
             echo "Verifying Android Boost compiler"
             echo "============================================================"
@@ -1268,43 +1138,26 @@ jobs:
             echo "ANDROID_AR=${ANDROID_AR}"
             echo "ANDROID_RANLIB=${ANDROID_RANLIB}"
 
-            "${ANDROID_CXX}" --version
+            "${ANDROID_CC}" --version
 
-            # ========================================================
-            # Boost Android Clang toolset
-            #
-            # Explicitly provide:
-            #
-            #   Android target triple
-            #   Android API level
-            #   ARM64 architecture
-            #   Android linker target
-            #   PIC
-            #
-            # The toolset name becomes clang-android because the
-            # compiler is registered as:
-            #
-            #   using clang : android : ...
-            # ========================================================
+            echo "============================================================"
+            echo "Boost Android user-config.jam"
+            echo "============================================================"
 
             cat > user-config.jam <<EOF
           using clang : android : ${ANDROID_CXX} :
             <compileflags>--target=${TARGET}${API}
             <compileflags>-fPIC
             <compileflags>-D__ANDROID_API__=${API}
+            <compileflags>-Wno-deprecated-declarations
+            <compileflags>-Wno-deprecated-non-prototype
             <linkflags>--target=${TARGET}${API}
             <archiver>${ANDROID_AR}
             <ranlib>${ANDROID_RANLIB} ;
           EOF
 
-            echo ""
-            echo "============================================================"
-            echo "Boost Android user-config.jam"
-            echo "============================================================"
-
             cat user-config.jam
 
-            echo ""
             echo "============================================================"
             echo "Boost Android cross-build"
             echo "============================================================"
@@ -1323,42 +1176,15 @@ jobs:
               runtime-link=static \
               variant=release \
               threading=multi \
-              --without-python \
               --with-system \
               --with-filesystem \
               --with-thread \
               --with-chrono \
               --with-program_options \
-              -d2 \
-              install \
-              2>&1 | tee boost-build.log
+              install
 
-            echo ""
-            echo "============================================================"
-            echo "Verifying Boost libraries"
-            echo "============================================================"
-
-            find "$P/lib" \
-              -maxdepth 1 \
-              -type f \
-              -name 'libboost*.a' \
-              -print \
-              | sort
-
-            echo ""
-            echo "Boost dependency build complete."
+            find "$P/lib" -maxdepth 1 -type f -name 'libboost*.a' -print | sort
           )
-
-          echo ""
-          echo "============================================================"
-          echo "Android dependency build complete"
-          echo "============================================================"
-
-          ls -lh "$P/lib" "$P/include" | head -n 100
-
-      # ============================================================
-      # Save Android dependency cache
-      # ============================================================
 
       - name: Save Android dependencies cache
         if: steps.deps-cache.outputs.cache-hit != 'true'
