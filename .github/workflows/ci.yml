@@ -1294,7 +1294,7 @@ jobs:
             EVENT_PTHREADS_LIBS="-L$P/lib -levent_pthreads -levent_core" \
             CRYPTO_CFLAGS="-I$P/include" \
             CRYPTO_LIBS="-L$P/lib -lcrypto" \
-            CPPFLAGS="-I$P/include" \
+            CPPFLAGS="-I$P/include -Dfread_unlocked=fread -Dfwrite_unlocked=fwrite -Dfflush_unlocked=fflush" \
             CFLAGS="-O2 -pipe -fPIC -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
             CXXFLAGS="-std=c++14 -O2 -pipe -fPIC -Wno-deprecated-declarations -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
             LDFLAGS="-L$P/lib -static-libstdc++" \
