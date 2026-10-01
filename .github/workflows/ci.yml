@@ -13,7 +13,6 @@ on:
 jobs:
   build:
     name: ${{ matrix.name }}
-
     env:
       MAKEJOBS: "-j3"
       CHECK_DOC: "0"
@@ -28,7 +27,6 @@ jobs:
 
     strategy:
       fail-fast: false
-
       matrix:
         name:
           - aarch64-linux
@@ -44,7 +42,6 @@ jobs:
           - x86_64-win
 
         include:
-
           # ============================================================
           # i686 Linux
           # ============================================================
@@ -117,7 +114,8 @@ jobs:
           #
           # IMPORTANT:
           # Keep this as Alpine.
-          # Do not run Ubuntu/bash-specific configuration against it.
+          # Alpine has NO bash by default, so the first step of the job
+          # (Bootstrap bash) uses `sh` to install it. Do not remove it.
           # ============================================================
           - name: x86_64-linux-musl
             host: x86_64-linux-musl
@@ -228,18 +226,14 @@ jobs:
           - name: aarch64-macos
             host: aarch64-apple-darwin
             runs-on: macos-14
-
             # No container here.
             # This is intentional.
-
             packages: ""
             run-bench: false
             check-security: true
             check-symbols: false
-
             dep-opts: ""
             config-opts: "--with-gui=qt5 --disable-tests"
-
             goal: deploy
 
     runs-on: ${{ matrix.runs-on || 'ubuntu-22.04' }}
@@ -251,6 +245,20 @@ jobs:
       options: ${{ matrix.container-options == '' && '-e 1MWC=1MWC' || matrix.container-options }}
 
     steps:
+      # ============================================================
+      # Bootstrap bash (Alpine / musl only)
+      #
+      # Alpine ships without bash, and every later step uses
+      # `shell: bash`. This step MUST use `sh` and MUST run first.
+      # On Ubuntu containers the `apk` branch is simply skipped.
+      # ============================================================
+      - name: Bootstrap bash (Alpine only)
+        if: ${{ matrix.container && matrix.name != 'aarch64-macos' }}
+        shell: sh
+        run: |
+          if command -v apk >/dev/null 2>&1; then
+            apk add --no-cache bash
+          fi
 
       # ============================================================
       # Linux container configuration
@@ -351,10 +359,9 @@ jobs:
               python
 
             BREW_PYTHON="$(brew --prefix python)/bin"
-
             echo "$BREW_PYTHON" >> "$GITHUB_PATH"
-
             export PATH="$BREW_PYTHON:$PATH"
+
             export PIP_BREAK_SYSTEM_PACKAGES=1
 
             python3 -m pip install --user --upgrade \
@@ -428,10 +435,8 @@ jobs:
               pkgconfig
 
           else
-
             echo "ERROR: Unsupported build environment."
             exit 1
-
           fi
 
           # ----------------------------------------------------------
@@ -564,7 +569,6 @@ jobs:
             PRIMARY_OK=true
           else
             echo "Primary SDK is missing or checksum is invalid."
-
             rm -f "$PRIMARY_FILE"
 
             if download_file "$PRIMARY_URL" "$PRIMARY_FILE"; then
@@ -581,13 +585,11 @@ jobs:
           fi
 
           if [[ "$PRIMARY_OK" != "true" ]]; then
-
             echo ""
             echo "============================================================"
             echo "PRIMARY SDK UNAVAILABLE"
             echo "Switching to FALLBACK SDK"
             echo "============================================================"
-
             echo "URL: $FALLBACK_URL"
             echo "SHA256: $FALLBACK_SHA"
 
@@ -600,7 +602,6 @@ jobs:
               echo "Fallback SDK already exists and checksum is valid."
             else
               echo "Fallback SDK is missing or checksum is invalid."
-
               rm -f "$FALLBACK_FILE"
 
               if ! download_file "$FALLBACK_URL" "$FALLBACK_FILE"; then
@@ -617,11 +618,8 @@ jobs:
             fi
 
             SDK_FILE="$FALLBACK_FILE"
-
           else
-
             SDK_FILE="$PRIMARY_FILE"
-
           fi
 
           echo ""
@@ -633,7 +631,6 @@ jobs:
           cd ../..
 
           rm -rf depends/SDKs/*
-
           tar -C depends/SDKs -xf "depends/sdk-sources/$SDK_FILE"
 
           echo ""
@@ -649,7 +646,7 @@ jobs:
       #   Native macOS build.
       #
       # MUSL:
-      #   Remains untouched and runs inside Alpine.
+      #   Runs inside Alpine (bash is installed by the bootstrap step).
       # ============================================================
       - name: Build depends
         shell: bash
@@ -676,7 +673,6 @@ jobs:
 
             export PYTHON="$HOMEBREW_PREFIX/bin/python3"
             export PYTHON3="$HOMEBREW_PREFIX/bin/python3"
-
             export PIP_BREAK_SYSTEM_PACKAGES=1
 
             echo "Python:"
@@ -842,3 +838,113 @@ jobs:
             dist/*.dmg
             dist/*.app
             ${{ matrix.name }}-bench.csv
+
+  # ==============================================================
+  # Termux (Android, aarch64)
+  #
+  # Builds the daemon / cli / tx inside the official Termux docker
+  # image on a NATIVE arm64 runner (no QEMU), so the binaries are the
+  # same ones people get when compiling in Termux on their phone.
+  #
+  # NOT a matrix entry on purpose: Termux is not a normal glibc
+  # container, so it can't be used as a job `container:` (the runner
+  # needs node + /bin/bash inside it). We use `docker run` instead.
+  #
+  # No GUI (Qt is not realistic on Termux).
+  # Wallet is enabled only if Termux provides Berkeley DB (libdb);
+  # otherwise it falls back to --disable-wallet and says so.
+  #
+  # continue-on-error is ON while this is experimental so it never
+  # turns the whole workflow red. Remove it once it's stable.
+  # ==============================================================
+  termux-aarch64:
+    name: termux-aarch64
+    runs-on: ubuntu-24.04-arm
+    continue-on-error: true
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Write Termux build script
+        shell: bash
+        run: |
+          cat > termux-build.sh <<'EOF'
+          #!/data/data/com.termux/files/usr/bin/bash
+          set -e
+
+          echo "============================================================"
+          echo "Termux environment"
+          echo "============================================================"
+          uname -a
+          echo "PREFIX=$PREFIX"
+
+          pkg update -y
+          pkg upgrade -y
+          pkg install -y \
+            git build-essential clang make automake autoconf libtool \
+            binutils pkg-config python \
+            boost libevent openssl libzmq
+
+          # ----------------------------------------------------------
+          # Wallet support needs Berkeley DB. Use it if Termux has it.
+          # ----------------------------------------------------------
+          WALLET_OPTS="--disable-wallet"
+          if pkg install -y libdb; then
+            WALLET_OPTS="--with-incompatible-bdb"
+            echo "libdb found: building WITH wallet"
+          else
+            echo "WARNING: libdb not available, building WITHOUT wallet"
+          fi
+
+          SHORT_COMMIT="$(echo "$GIT_COMMIT_ID" | cut -c1-7)"
+
+          chmod +x autogen.sh share/genbuild.sh || true
+          ./autogen.sh
+          chmod +x configure || true
+
+          ./configure \
+            --without-gui \
+            --disable-tests \
+            --disable-bench \
+            --enable-reduce-exports \
+            $WALLET_OPTS \
+            CFLAGS="-pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            CXXFLAGS="-std=c++17 -pipe -O2 -Wno-deprecated-declarations -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            || { echo "configure failed; dumping config.log"; cat config.log; exit 1; }
+
+          make -j3 || { echo "Build failure. Verbose build follows."; make V=1; exit 1; }
+
+          echo "============================================================"
+          echo "Built binaries"
+          echo "============================================================"
+          ls -lh src/minersworldcoind src/minersworldcoin-cli src/minersworldcoin-tx || true
+          EOF
+
+      - name: Build in Termux
+        shell: bash
+        run: |
+          # The Termux image runs as an unprivileged user, so make the
+          # checkout writable for it.
+          chmod -R a+rwX "$GITHUB_WORKSPACE"
+
+          docker run --rm \
+            -e GIT_COMMIT_ID="${{ github.sha }}" \
+            -v "$GITHUB_WORKSPACE":/home/src \
+            -w /home/src \
+            termux/termux-docker:aarch64 \
+            bash termux-build.sh
+
+      - name: Upload Termux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: minersworldcoin-${{ github.sha }}-termux-aarch64
+          if-no-files-found: warn
+          path: |
+            src/minersworldcoind
+            src/minersworldcoin-cli
+            src/minersworldcoin-tx
