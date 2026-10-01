@@ -262,13 +262,11 @@ jobs:
             config-opts: "--with-gui=qt5 --disable-tests"
             goal: deploy
 
-            # ORIGINAL PRIMARY SDK
             sdk: 10.11
             sdk-url: "https://depends.dogecoincore.org"
             sdk-filename: "MacOSX10.11.sdk.tar.gz"
             sdk-shasum: "bec9d089ebf2e2dd59b1a811a38ec78ebd5da18cbbcd6ab39d1e59f64ac5033f"
 
-            # ORIGINAL FALLBACK SDK
             sdk-fallback-url: "https://github.com/phracker/MacOSX-SDKs/releases/download/11.3"
             sdk-fallback-filename: "MacOSX10.11.sdk.tar.xz"
             sdk-fallback-shasum: "d080fc672d94f95eb54651c37ede80f61761ce4c91f87061e11a20222c8d00c8"
@@ -276,14 +274,7 @@ jobs:
           # ============================================================
           # Apple Silicon macOS
           #
-          # ORIGINAL WORKING CONFIG (depends build, aarch64-apple-darwin21,
-          # phracker 11.3 SDK, bdb 4.8.30 + Qt from depends, dmg deploy).
-          #
-          # Only change: runs-on macos-14 -> macos-15. Homebrew dropped
-          # bottles for macOS 14 (Tier 3), so every brew package built
-          # from source (llvm alone ~1h48m, x265 failed).
-          #
-          # Native runner: NO container, NO Intel SDK.
+          # ORIGINAL WORKING CONFIG
           # ============================================================
           - name: aarch64-macos
             host: aarch64-apple-darwin21
@@ -300,26 +291,16 @@ jobs:
             sdk-filename: "MacOSX11.3.sdk.tar.xz"
             sdk-shasum: "cd4f08a75577145b8f05245a2975f7c81401d75e9535dcffbb879ee1deefcbf4"
 
-    # Matrix entries marked `experimental: true` never fail the workflow.
     continue-on-error: ${{ matrix.experimental == true }}
     timeout-minutes: ${{ matrix.experimental == true && 90 || 360 }}
 
     runs-on: ${{ matrix.runs-on || 'ubuntu-22.04' }}
 
-    # IMPORTANT:
-    # Native macOS ARM must NOT receive a Linux container.
     container:
       image: ${{ matrix.container }}
       options: ${{ matrix.container-options == '' && '-e 1MWC=1MWC' || matrix.container-options }}
 
     steps:
-      # ============================================================
-      # Bootstrap bash (Alpine / musl only)
-      #
-      # Alpine ships without bash, and every later step uses
-      # `shell: bash`. This step MUST use `sh` and MUST run first.
-      # On Ubuntu containers the `apk` branch is simply skipped.
-      # ============================================================
       - name: Bootstrap bash (Alpine only)
         if: ${{ matrix.container && matrix.name != 'aarch64-macos' }}
         shell: sh
@@ -328,11 +309,6 @@ jobs:
             apk add --no-cache bash
           fi
 
-      # ============================================================
-      # Linux container configuration
-      #
-      # Native macOS ARM deliberately skips this.
-      # ============================================================
       - name: Configure container (Linux only)
         if: ${{ matrix.container && matrix.name != 'aarch64-macos' }}
         shell: bash
@@ -342,9 +318,6 @@ jobs:
           mkdir -p "$WINEPREFIX" || true
           uname -a
 
-      # ============================================================
-      # Native macOS configuration
-      # ============================================================
       - name: Configure macOS runner
         if: ${{ matrix.name == 'aarch64-macos' }}
         shell: bash
@@ -389,21 +362,11 @@ jobs:
           echo "SDK version:"
           xcrun --sdk macosx --show-sdk-version
 
-      # ============================================================
-      # Pre-install
-      # ============================================================
       - name: Pre install
         if: ${{ matrix.preinstall }}
         shell: bash
         run: ${{ matrix.preinstall }}
 
-      # ============================================================
-      # Install packages
-      #
-      # Native macOS ARM gets ONLY Homebrew dependencies.
-      #
-      # Linux containers retain the original apt/apk behaviour.
-      # ============================================================
       - name: Install packages
         shell: bash
         run: |
@@ -520,26 +483,17 @@ jobs:
             python3 -m pip install lief || true
           fi
 
-      # ============================================================
-      # Post install
-      # ============================================================
       - name: Post install
         if: ${{ matrix.postinstall }}
         timeout-minutes: 15
         shell: bash
         run: ${{ matrix.postinstall }}
 
-      # ============================================================
-      # Checkout
-      # ============================================================
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ============================================================
-      # Submodules
-      # ============================================================
       - name: Fix permissions and init submodules
         shell: bash
         run: |
@@ -547,9 +501,6 @@ jobs:
           git submodule update --init --recursive
           chmod +x depends/config.guess depends/config.sub || true
 
-      # ============================================================
-      # SDK cache
-      # ============================================================
       - name: SDK cache
         if: ${{ matrix.sdk }}
         uses: actions/cache@v4
@@ -559,9 +510,6 @@ jobs:
           path: ./depends/sdk-sources
           key: ${{ matrix.name }}-${{ env.CACHE_NAME }}-${{ hashFiles('.github/workflows/ci.yml') }}
 
-      # ============================================================
-      # Install Intel macOS SDK
-      # ============================================================
       - name: Install SDK
         if: ${{ matrix.sdk }}
         shell: bash
@@ -711,9 +659,6 @@ jobs:
           echo ""
           echo "SDK extraction complete."
 
-      # ============================================================
-      # ARM64 Windows: patch BDB's x86-only MUTEX_PAUSE
-      # ============================================================
       - name: Patch depends BDB for ARM64 Windows
         if: ${{ matrix.host == 'aarch64-w64-mingw32' }}
         shell: bash
@@ -741,9 +686,6 @@ jobs:
           echo "--- bdb.mk preprocess block after patch ---"
           sed -n '/preprocess_cmds/,/^endef/p' depends/packages/bdb.mk
 
-      # ============================================================
-      # Build depends
-      # ============================================================
       - name: Build depends
         shell: bash
         run: |
@@ -816,9 +758,6 @@ jobs:
 
           fi
 
-      # ============================================================
-      # CCache
-      # ============================================================
       - name: CCache
         uses: actions/cache@v4
         env:
@@ -827,9 +766,6 @@ jobs:
           path: ~/.ccache
           key: ${{ matrix.name }}-${{ env.CACHE_NAME }}-${{ hashFiles('**/configure.ac', '.github/workflows/ci.yml') }}
 
-      # ============================================================
-      # Build MinersWorldCoin
-      # ============================================================
       - name: Build MinersWorldCoin
         env:
           GIT_COMMIT_ID: ${{ github.sha }}
@@ -892,9 +828,6 @@ jobs:
               false
             )
 
-      # ============================================================
-      # Benchmark
-      # ============================================================
       - name: Run benchmark
         if: ${{ matrix.run-bench }}
         shell: bash
@@ -902,9 +835,6 @@ jobs:
           src/bench/bench_minersworldcoin > ${{ matrix.name }}-bench.csv
           cat ${{ matrix.name }}-bench.csv
 
-      # ============================================================
-      # Security check
-      # ============================================================
       - name: Fix permissions for security-check.py
         shell: bash
         run: chmod +x contrib/devtools/security-check.py
@@ -914,24 +844,15 @@ jobs:
         shell: bash
         run: make -C src check-security
 
-      # ============================================================
-      # Symbol check
-      # ============================================================
       - name: Check symbols
         if: ${{ matrix.check-symbols }}
         shell: bash
         run: make -C src check-symbols
 
-      # ============================================================
-      # Cleanup
-      # ============================================================
       - name: Cleanup qa artifacts
         shell: bash
         run: rm -rf qa/cache || true
 
-      # ============================================================
-      # Upload artifacts
-      # ============================================================
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -1055,8 +976,8 @@ jobs:
       # ============================================================
       # Android dependency cache
       #
-      # v3 intentionally invalidates previous Android dependency
-      # caches so the corrected Boost build is used.
+      # v4 invalidates the previous Boost cache and ensures the
+      # corrected host-B2 / Android cross-build is rebuilt.
       # ============================================================
 
       - name: Restore Android dependencies cache
@@ -1064,7 +985,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: android-deps
-          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v3
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v4
 
       # ============================================================
       # Build static Android dependencies
@@ -1162,10 +1083,6 @@ jobs:
           "$CC" --version
           "$CXX" --version
 
-          echo ""
-          echo "Compiler target:"
-          "$CXX" -dumpmachine || true
-
           # ==========================================================
           # libevent 2.1.12
           # ==========================================================
@@ -1258,11 +1175,15 @@ jobs:
           #
           # IMPORTANT:
           #
-          # Boost.Build (b2) is a HOST executable and MUST be built
-          # for the Ubuntu x86_64 runner.
+          # b2 MUST be a HOST x86_64 executable.
           #
-          # The Boost libraries themselves are then cross-compiled
-          # for Android ARM64.
+          # The Boost libraries themselves are cross-compiled for
+          # Android ARM64.
+          #
+          # IMPORTANT:
+          # Do NOT use `./b2 --version` as a fatal verification
+          # command here. The Boost 1.74 b2 binary in this environment
+          # prints its version but returns exit code 1.
           # ==========================================================
 
           fetch \
@@ -1284,10 +1205,12 @@ jobs:
             ANDROID_RANLIB="${RANLIB}"
 
             # --------------------------------------------------------
-            # Bootstrap Boost.Build using the HOST compiler.
+            # Bootstrap b2 using the HOST compiler.
             #
-            # Do NOT allow CC/CXX/AR/RANLIB to point at Android while
-            # building b2 itself.
+            # The GitHub Actions runner is x86_64 Ubuntu.
+            #
+            # This is critical: b2 itself must NOT be an Android ARM64
+            # executable.
             # --------------------------------------------------------
 
             unset CC
@@ -1310,28 +1233,58 @@ jobs:
             export AR="${ANDROID_AR}"
             export RANLIB="${ANDROID_RANLIB}"
 
-            echo ""
             echo "============================================================"
             echo "Verifying HOST b2"
             echo "============================================================"
 
             file ./b2
 
-            ./b2 --version
+            # The `file` result must show x86-64.
+            file ./b2 | grep -Eq 'ELF 64-bit.*x86-64' || {
+              echo "ERROR: Boost b2 is not an x86-64 HOST executable."
+              file ./b2
+              exit 1
+            }
 
             test -x ./b2
+
+            # Boost 1.74's b2 can return status 1 from --version even
+            # though the executable is valid. Use the short -v form
+            # only for informational output and do not make it a
+            # build-stopping test.
+            ./b2 -v || true
+
+            # --------------------------------------------------------
+            # Verify Android compiler separately.
+            # --------------------------------------------------------
+
+            echo ""
+            echo "============================================================"
+            echo "Verifying Android Boost compiler"
+            echo "============================================================"
+
+            echo "ANDROID_CC=${ANDROID_CC}"
+            echo "ANDROID_CXX=${ANDROID_CXX}"
+            echo "ANDROID_AR=${ANDROID_AR}"
+            echo "ANDROID_RANLIB=${ANDROID_RANLIB}"
+
+            "${ANDROID_CXX}" --version
 
             # ========================================================
             # Boost Android Clang toolset
             #
-            # Explicitly configure:
+            # Explicitly provide:
             #
             #   Android target triple
             #   Android API level
             #   ARM64 architecture
             #   Android linker target
-            #   Android ABI
-            #   pthread threading
+            #   PIC
+            #
+            # The toolset name becomes clang-android because the
+            # compiler is registered as:
+            #
+            #   using clang : android : ...
             # ========================================================
 
             cat > user-config.jam <<EOF
@@ -1339,7 +1292,6 @@ jobs:
             <compileflags>--target=${TARGET}${API}
             <compileflags>-fPIC
             <compileflags>-D__ANDROID_API__=${API}
-            <compileflags>-std=c++14
             <linkflags>--target=${TARGET}${API}
             <archiver>${ANDROID_AR}
             <ranlib>${ANDROID_RANLIB} ;
@@ -1354,24 +1306,11 @@ jobs:
 
             echo ""
             echo "============================================================"
-            echo "Boost Android toolchain"
-            echo "============================================================"
-
-            echo "Android CXX: ${ANDROID_CXX}"
-            echo "Android AR:  ${ANDROID_AR}"
-            echo "Android RANLIB: ${ANDROID_RANLIB}"
-
-            "${ANDROID_CXX}" --version
-            "${ANDROID_CXX}" -dumpmachine || true
-
-            echo ""
-            echo "============================================================"
             echo "Boost Android cross-build"
             echo "============================================================"
 
             ./b2 \
               ${MAKEJOBS} \
-              -d2 \
               --user-config=user-config.jam \
               --layout=system \
               --prefix="$P" \
@@ -1380,10 +1319,8 @@ jobs:
               architecture=arm \
               address-model=64 \
               binary-format=elf \
-              abi=aapcs \
-              threadapi=pthread \
               link=static \
-              runtime-link=shared \
+              runtime-link=static \
               variant=release \
               threading=multi \
               --without-python \
@@ -1392,6 +1329,7 @@ jobs:
               --with-thread \
               --with-chrono \
               --with-program_options \
+              -d2 \
               install \
               2>&1 | tee boost-build.log
 
@@ -1427,7 +1365,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: android-deps
-          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v3
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v4
 
       # ============================================================
       # Build MinersWorldCoin
@@ -1437,7 +1375,6 @@ jobs:
         shell: bash
         run: |
           set -e
-          set -o pipefail
 
           P="$GITHUB_WORKSPACE/android-deps"
 
@@ -1465,10 +1402,6 @@ jobs:
 
           "$CC" --version
           "$CXX" --version
-
-          echo ""
-          echo "Compiler target:"
-          "$CXX" -dumpmachine || true
 
           # ==========================================================
           # Autotools
