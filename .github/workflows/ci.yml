@@ -1320,9 +1320,9 @@ jobs:
             BDB_CFLAGS="-I$P/include" \
             BDB_LIBS="-L$P/lib -ldb_cxx-4.8" \
             EVENT_CFLAGS="-I$P/include" \
-            EVENT_LIBS="-L$P/lib -levent_core" \
+            EVENT_LIBS="-L$P/lib -levent_extra -levent_core" \
             EVENT_PTHREADS_CFLAGS="-I$P/include" \
-            EVENT_PTHREADS_LIBS="-L$P/lib -levent_pthreads -levent_core" \
+            EVENT_PTHREADS_LIBS="-L$P/lib -levent_extra -levent_pthreads -levent_core" \
             CRYPTO_CFLAGS="-I$P/include" \
             CRYPTO_LIBS="-L$P/lib -lcrypto" \
             CPPFLAGS="-I$P/include -Dfread_unlocked=fread -Dfwrite_unlocked=fwrite -Dfflush_unlocked=fflush" \
@@ -1395,4 +1395,3 @@ jobs:
             src/minersworldcoind
             src/minersworldcoin-cli
             src/minersworldcoin-tx
-            
