@@ -1,0 +1,761 @@
+name: Experimental Builds
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/experimental-builds.yml'
+      - '**/configure.ac'
+      - 'depends/**'
+      - 'src/**'
+      - 'configure.ac'
+      - 'Makefile.am'
+  pull_request:
+    paths:
+      - '.github/workflows/experimental-builds.yml'
+      - '**/configure.ac'
+      - 'depends/**'
+      - 'src/**'
+      - 'configure.ac'
+      - 'Makefile.am'
+
+permissions:
+  contents: read
+
+env:
+  MAKEJOBS: "-j3"
+  CHECK_DOC: "0"
+  CCACHE_SIZE: "150M"
+  ANDROID_NDK_VERSION: "29.0.14206865"
+  ANDROID_API_LEVEL: "24"
+
+jobs:
+
+  linux-cross:
+    name: "Experimental Linux - ${{ matrix.name }}"
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: ppc64le-linux
+            host: powerpc64le-linux-gnu
+            packages: gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu qemu-user-static qemu-user
+            cc: powerpc64le-linux-gnu-gcc
+            cxx: powerpc64le-linux-gnu-g++
+          - name: s390x-linux
+            host: s390x-linux-gnu
+            packages: gcc-s390x-linux-gnu g++-s390x-linux-gnu qemu-user-static qemu-user
+            cc: s390x-linux-gnu-gcc
+            cxx: s390x-linux-gnu-g++
+          - name: loongarch64-linux
+            host: loongarch64-linux-gnu
+            packages: gcc-loongarch64-linux-gnu g++-loongarch64-linux-gnu qemu-user-static qemu-user
+            cc: loongarch64-linux-gnu-gcc
+            cxx: loongarch64-linux-gnu-g++
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install cross toolchain
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo dpkg --add-architecture i386 || true
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf automake libtool pkg-config \
+            build-essential curl ca-certificates git \
+            python3 python3-pip \
+            ccache file \
+            ${{ matrix.packages }}
+
+      - name: Show target toolchain
+        shell: bash
+        run: |
+          set -euxo pipefail
+          uname -a
+          ${{ matrix.cc }} --version
+          ${{ matrix.cxx }} --version
+          ${{ matrix.cc }} -dumpmachine || true
+
+      - name: Prepare build system
+        shell: bash
+        run: |
+          set -euxo pipefail
+          chmod +x autogen.sh configure 2>/dev/null || true
+          git submodule update --init --recursive
+          ./autogen.sh
+
+      - name: Build dependencies
+        shell: bash
+        env:
+          HOST: ${{ matrix.host }}
+        run: |
+          set -euxo pipefail
+
+          # Experimental builds intentionally use the project's dependency
+          # system first. If this host is not yet understood by depends,
+          # the failure is useful evidence for adding native support later.
+          make $MAKEJOBS -C depends \
+            HOST="${HOST}" \
+            NO_QT=1 \
+            NO_ZMQ=1 \
+            NO_UPNP=1 \
+            NO_NATPMP=1
+
+      - name: Configure target
+        shell: bash
+        env:
+          HOST: ${{ matrix.host }}
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: |
+          set -euxo pipefail
+
+          PREFIX="${PWD}/depends/${HOST}"
+
+          ./configure \
+            --host="${HOST}" \
+            --prefix="${PREFIX}" \
+            --disable-tests \
+            --disable-bench \
+            --without-gui \
+            --disable-zmq \
+            --disable-upnp-default \
+            --enable-reduce-exports \
+            CFLAGS="-O2 -pipe" \
+            CXXFLAGS="-std=c++17 -O2 -pipe" \
+            LDFLAGS="-static-libstdc++" \
+            || {
+              cat config.log
+              exit 1
+            }
+
+      - name: Build target
+        shell: bash
+        run: |
+          set -euxo pipefail
+          make $MAKEJOBS install
+
+      - name: Inspect binaries
+        shell: bash
+        run: |
+          set -euxo pipefail
+          BIN="depends/${{ matrix.host }}/bin"
+          find "${BIN}" -maxdepth 1 -type f -print -exec file {} \; || true
+          test -f "${BIN}/minersworldcoind"
+          test -f "${BIN}/minersworldcoin-cli"
+          test -f "${BIN}/minersworldcoin-tx"
+
+      - name: Upload experimental artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: minersworldcoin-${{ github.sha }}-${{ matrix.name }}
+          if-no-files-found: ignore
+          path: |
+            depends/${{ matrix.host }}/bin/minersworldcoin*
+            depends/${{ matrix.host }}/lib/libbitcoinconsensus*
+            depends/${{ matrix.host }}/include/bitcoinconsensus.h
+
+  # ========================================================================
+  # MUSL ARM64
+  #
+  # GitHub's x64 runner boots a real ARM64 Alpine VM under QEMU. This gives
+  # us a genuine aarch64-musl environment rather than pretending that a
+  # glibc cross build is the same thing.
+  # ========================================================================
+
+  aarch64-linux-musl:
+    name: "Experimental Linux - ARM64 musl"
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build in Alpine ARM64
+        uses: vmactions/alpine-vm@v1
+        with:
+          release: "3.23"
+          arch: aarch64
+          usesh: true
+          mem: 8192
+          cpu: 4
+          sync: rsync
+          copyback: true
+          prepare: |
+            set -eux
+            apk add --no-cache \
+              bash git build-base linux-headers \
+              autoconf automake libtool pkgconfig \
+              python3 curl ca-certificates file \
+              cmake
+          run: |
+            set -eux
+            git config --global --add safe.directory "$(pwd)"
+            ./autogen.sh
+
+            make -j3 -C depends \
+              HOST=aarch64-linux-musl \
+              NO_QT=1 \
+              NO_ZMQ=1 \
+              NO_UPNP=1 \
+              NO_NATPMP=1 \
+              NO_OPENSSL_LEGACY=1
+
+            ./configure \
+              --host=aarch64-linux-musl \
+              --prefix="${PWD}/depends/aarch64-linux-musl" \
+              --disable-tests \
+              --disable-bench \
+              --without-gui \
+              --disable-zmq \
+              --enable-reduce-exports \
+              CXXFLAGS="-std=c++17 -O2 -Wno-deprecated-declarations"
+
+            make -j3 install
+
+            find depends/aarch64-linux-musl/bin -maxdepth 1 \
+              -type f -name 'minersworldcoin*' -print -exec file {} \;
+
+      - name: Upload ARM64 musl artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: minersworldcoin-${{ github.sha }}-aarch64-linux-musl
+          if-no-files-found: ignore
+          path: depends/aarch64-linux-musl/bin/minersworldcoin*
+
+  # ========================================================================
+  # RISC-V 32
+  # ========================================================================
+
+  riscv32-linux:
+    name: "Experimental Linux - riscv32"
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install LLVM/RISC-V toolchain
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            autoconf automake libtool pkg-config \
+            build-essential clang llvm lld \
+            qemu-user-static qemu-user \
+            file python3 curl ca-certificates git
+
+      - name: Prepare build system
+        run: |
+          set -euxo pipefail
+          git submodule update --init --recursive
+          ./autogen.sh
+
+      - name: Probe RISC-V 32 toolchain
+        run: |
+          set -euxo pipefail
+          clang --version
+          clang --target=riscv32-linux-gnu -march=rv32gc -mabi=ilp32d \
+            -x c -c -o /tmp/riscv32-probe.o - <<'EOF'
+          int main(void) { return 0; }
+          EOF
+          file /tmp/riscv32-probe.o
+
+      - name: Attempt dependency build
+        run: |
+          set -euxo pipefail
+          make $MAKEJOBS -C depends \
+            HOST=riscv32-linux-gnu \
+            NO_QT=1 \
+            NO_ZMQ=1 \
+            NO_UPNP=1 \
+            NO_NATPMP=1
+
+      - name: Attempt MinersWorldCoin build
+        run: |
+          set -euxo pipefail
+          export CC="clang --target=riscv32-linux-gnu -march=rv32gc -mabi=ilp32d"
+          export CXX="clang++ --target=riscv32-linux-gnu -march=rv32gc -mabi=ilp32d"
+
+          ./configure \
+            --host=riscv32-linux-gnu \
+            --prefix="${PWD}/depends/riscv32-linux-gnu" \
+            --disable-tests \
+            --disable-bench \
+            --without-gui \
+            --disable-zmq \
+            --enable-reduce-exports
+
+          make $MAKEJOBS install
+
+      - name: Upload RISC-V 32 artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: minersworldcoin-${{ github.sha }}-riscv32-linux
+          if-no-files-found: ignore
+          path: depends/riscv32-linux-gnu/bin/minersworldcoin*
+
+  # ========================================================================
+  # ANDROID / TERMUX EXPERIMENTS
+  #
+  # Same model as the working ARM64 Termux build, but with additional NDK
+  # ABIs. These are standalone Termux-compatible binaries, not APKs.
+  # ========================================================================
+
+  android:
+    name: "Experimental Android - ${{ matrix.name }}"
+    runs-on: ubuntu-24.04
+    continue-on-error: true
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: armv7-termux
+            host: arm-linux-androideabi
+            ndk_target: armv7a-linux-androideabi
+            arch: armv7-a
+            abi: armeabi-v7a
+          - name: x86-termux
+            host: i686-linux-android
+            ndk_target: i686-linux-android
+            arch: i686
+            abi: x86
+          - name: x86_64-termux
+            host: x86_64-linux-android
+            ndk_target: x86_64-linux-android
+            arch: x86-64
+            abi: x86_64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: "platform-tools platforms;android-24"
+
+      - name: Install Android NDK
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sdkmanager --install "ndk;${ANDROID_NDK_VERSION}"
+          echo "ANDROID_NDK=${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK_VERSION}" >> "$GITHUB_ENV"
+          echo "ANDROID_API_LEVEL=${ANDROID_API_LEVEL}" >> "$GITHUB_ENV"
+          echo "ANDROID_TOOLCHAIN_BIN=${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "$GITHUB_ENV"
+
+      - name: Prepare build system
+        run: |
+          set -euxo pipefail
+          git submodule update --init --recursive
+          ./autogen.sh
+
+      - name: Configure Android compiler
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          case "${{ matrix.name }}" in
+            armv7-termux)
+              export CC="${ANDROID_TOOLCHAIN_BIN}/armv7a-linux-androideabi${ANDROID_API_LEVEL}-clang"
+              export CXX="${ANDROID_TOOLCHAIN_BIN}/armv7a-linux-androideabi${ANDROID_API_LEVEL}-clang++"
+              export AR="${ANDROID_TOOLCHAIN_BIN}/llvm-ar"
+              export RANLIB="${ANDROID_TOOLCHAIN_BIN}/llvm-ranlib"
+              export STRIP="${ANDROID_TOOLCHAIN_BIN}/llvm-strip"
+              ;;
+            x86-termux)
+              export CC="${ANDROID_TOOLCHAIN_BIN}/i686-linux-android${ANDROID_API_LEVEL}-clang"
+              export CXX="${ANDROID_TOOLCHAIN_BIN}/i686-linux-android${ANDROID_API_LEVEL}-clang++"
+              export AR="${ANDROID_TOOLCHAIN_BIN}/llvm-ar"
+              export RANLIB="${ANDROID_TOOLCHAIN_BIN}/llvm-ranlib"
+              export STRIP="${ANDROID_TOOLCHAIN_BIN}/llvm-strip"
+              ;;
+            x86_64-termux)
+              export CC="${ANDROID_TOOLCHAIN_BIN}/x86_64-linux-android${ANDROID_API_LEVEL}-clang"
+              export CXX="${ANDROID_TOOLCHAIN_BIN}/x86_64-linux-android${ANDROID_API_LEVEL}-clang++"
+              export AR="${ANDROID_TOOLCHAIN_BIN}/llvm-ar"
+              export RANLIB="${ANDROID_TOOLCHAIN_BIN}/llvm-ranlib"
+              export STRIP="${ANDROID_TOOLCHAIN_BIN}/llvm-strip"
+              ;;
+          esac
+
+          {
+            echo "CC=${CC}"
+            echo "CXX=${CXX}"
+            echo "AR=${AR}"
+            echo "RANLIB=${RANLIB}"
+            echo "STRIP=${STRIP}"
+          } >> "$GITHUB_ENV"
+
+          "$CC" --version
+          "$CXX" --version
+
+      - name: Build Android dependencies
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          make $MAKEJOBS -C depends \
+            HOST="${{ matrix.host }}" \
+            ANDROID_SDK="${ANDROID_SDK_ROOT}" \
+            ANDROID_NDK="${ANDROID_NDK}" \
+            ANDROID_API_LEVEL="${ANDROID_API_LEVEL}" \
+            ANDROID_TOOLCHAIN_BIN="${ANDROID_TOOLCHAIN_BIN}" \
+            NO_QT=1 \
+            NO_ZMQ=1 \
+            NO_UPNP=1 \
+            NO_NATPMP=1
+
+      - name: Configure MinersWorldCoin
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          PREFIX="${PWD}/depends/${{ matrix.host }}"
+
+          ./configure \
+            --host="${{ matrix.host }}" \
+            --prefix="${PREFIX}" \
+            --disable-tests \
+            --disable-bench \
+            --without-gui \
+            --disable-zmq \
+            --enable-reduce-exports \
+            CFLAGS="-O2 -fPIE -fPIC" \
+            CXXFLAGS="-std=c++17 -O2 -fPIE -fPIC" \
+            CPPFLAGS="-I${PREFIX}/include" \
+            LDFLAGS="-L${PREFIX}/lib -fPIE -pie" \
+            || {
+              cat config.log
+              exit 1
+            }
+
+      - name: Build Android binaries
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          make $MAKEJOBS install \
+            CXXFLAGS="-std=c++17 -O2 -fPIE -fPIC"
+
+          "${STRIP}" --strip-debug --strip-unneeded \
+            "depends/${{ matrix.host }}/bin/minersworldcoind" \
+            "depends/${{ matrix.host }}/bin/minersworldcoin-cli" \
+            "depends/${{ matrix.host }}/bin/minersworldcoin-tx" \
+            2>/dev/null || true
+
+      - name: Inspect Android binaries
+        shell: bash
+        run: |
+          set -euxo pipefail
+          BIN="depends/${{ matrix.host }}/bin"
+          find "$BIN" -maxdepth 1 -type f -print -exec file {} \;
+          test -f "$BIN/minersworldcoind"
+          test -f "$BIN/minersworldcoin-cli"
+          test -f "$BIN/minersworldcoin-tx"
+
+      - name: Upload Android artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: minersworldcoin-${{ github.sha }}-android-${{ matrix.name }}
+          if-no-files-found: ignore
+          path: |
+            depends/${{ matrix.host }}/bin/minersworldcoin*
+            depends/${{ matrix.host }}/lib/libbitcoinconsensus*
+            depends/${{ matrix.host }}/include/bitcoinconsensus.h
+
+  # ========================================================================
+  # BSD BUILDS
+  #
+  # GitHub does not provide BSD hosted runners. vmactions boots real BSD
+  # VMs under QEMU from an Ubuntu GitHub runner.
+  # ========================================================================
+
+  freebsd:
+    name: "Experimental FreeBSD - ${{ matrix.name }}"
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: x86_64
+            arch: x86_64
+            release: "15.0"
+          - name: arm64
+            arch: aarch64
+            release: "15.0"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build on FreeBSD
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: ${{ matrix.release }}
+          arch: ${{ matrix.arch }}
+          usesh: true
+          mem: 8192
+          cpu: 4
+          sync: rsync
+          copyback: true
+          prepare: |
+            set -eux
+            pkg update -f
+            pkg install -y \
+              bash git gmake \
+              autoconf automake libtool pkgconf \
+              boost-libs openssl libevent \
+              db18
+          run: |
+            set -eux
+            git config --global --add safe.directory "$(pwd)"
+            ./autogen.sh
+
+            ./configure \
+              --prefix="${PWD}/bsd-out" \
+              --disable-tests \
+              --disable-bench \
+              --without-gui \
+              --disable-zmq \
+              --enable-reduce-exports \
+              || {
+                cat config.log
+                exit 1
+              }
+
+            gmake -j3
+            gmake install
+
+            find bsd-out -type f -name 'minersworldcoin*' -print -exec file {} \;
+
+      - name: Upload FreeBSD artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: minersworldcoin-${{ github.sha }}-freebsd-${{ matrix.name }}
+          if-no-files-found: ignore
+          path: bsd-out/bin/minersworldcoin*
+
+  openbsd:
+    name: "Experimental OpenBSD - x86_64"
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build on OpenBSD
+        uses: vmactions/openbsd-vm@v1
+        with:
+          release: "7.7"
+          usesh: true
+          mem: 8192
+          cpu: 4
+          sync: rsync
+          copyback: true
+          prepare: |
+            set -eux
+            pkg_add -u
+            pkg_add \
+              bash git gmake \
+              autoconf automake libtool pkgconf \
+              boost libevent
+          run: |
+            set -eux
+            git config --global --add safe.directory "$(pwd)"
+            ./autogen.sh
+
+            ./configure \
+              --prefix="${PWD}/bsd-out" \
+              --disable-tests \
+              --disable-bench \
+              --without-gui \
+              --disable-zmq \
+              --enable-reduce-exports \
+              || {
+                cat config.log
+                exit 1
+              }
+
+            gmake -j3
+            gmake install
+
+            find bsd-out -type f -name 'minersworldcoin*' -print -exec file {} \;
+
+      - name: Upload OpenBSD artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: minersworldcoin-${{ github.sha }}-openbsd-x86_64
+          if-no-files-found: ignore
+          path: bsd-out/bin/minersworldcoin*
+
+  netbsd:
+    name: "Experimental NetBSD - ${{ matrix.name }}"
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: x86_64
+            arch: x86_64
+          - name: arm64
+            arch: aarch64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build on NetBSD
+        uses: vmactions/netbsd-vm@v1
+        with:
+          release: "10.0"
+          arch: ${{ matrix.arch }}
+          usesh: true
+          mem: 8192
+          cpu: 4
+          sync: rsync
+          copyback: true
+          prepare: |
+            set -eux
+            PKG_PATH="https://cdn.NetBSD.org/pub/pkgsrc/packages/NetBSD/$(uname -m)/$(uname -r | cut -d_ -f1)/All"
+            pkg_add -v pkgin || true
+            pkgin -y update || true
+            pkgin -y install \
+              bash git gmake \
+              autoconf automake libtool pkg-config \
+              boost libevent openssl || true
+          run: |
+            set -eux
+            git config --global --add safe.directory "$(pwd)"
+            ./autogen.sh
+
+            ./configure \
+              --prefix="${PWD}/bsd-out" \
+              --disable-tests \
+              --disable-bench \
+              --without-gui \
+              --disable-zmq \
+              --enable-reduce-exports \
+              || {
+                cat config.log
+                exit 1
+              }
+
+            gmake -j3
+            gmake install
+
+            find bsd-out -type f -name 'minersworldcoin*' -print -exec file {} \;
+
+      - name: Upload NetBSD artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: minersworldcoin-${{ github.sha }}-netbsd-${{ matrix.name }}
+          if-no-files-found: ignore
+          path: bsd-out/bin/minersworldcoin*
+
+  # ========================================================================
+  # NATIVE ARM64 SANITY CHECK
+  #
+  # GitHub now provides ubuntu-24.04-arm hosted runners. This confirms the
+  # project can build natively on ARM64 rather than only cross-compiling.
+  # ========================================================================
+
+  linux-arm64-native:
+    name: "Experimental Linux - native ARM64"
+    runs-on: ubuntu-24.04-arm
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install build dependencies
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential autoconf automake libtool pkg-config \
+            python3 python3-pip ccache \
+            curl ca-certificates git file
+
+      - name: Build
+        run: |
+          set -euxo pipefail
+          git submodule update --init --recursive
+          ./autogen.sh
+
+          make $MAKEJOBS -C depends \
+            HOST=aarch64-linux-gnu \
+            NO_QT=1 \
+            NO_ZMQ=1 \
+            NO_UPNP=1 \
+            NO_NATPMP=1
+
+          ./configure \
+            --host=aarch64-linux-gnu \
+            --prefix="${PWD}/depends/aarch64-linux-gnu" \
+            --disable-tests \
+            --disable-bench \
+            --without-gui \
+            --disable-zmq \
+            --enable-reduce-exports
+
+          make $MAKEJOBS install
+
+      - name: Inspect ARM64 binaries
+        run: |
+          set -euxo pipefail
+          file depends/aarch64-linux-gnu/bin/minersworldcoind
+          file depends/aarch64-linux-gnu/bin/minersworldcoin-cli
+          file depends/aarch64-linux-gnu/bin/minersworldcoin-tx
+
+      - name: Upload ARM64 artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: minersworldcoin-${{ github.sha }}-linux-arm64-native
+          if-no-files-found: ignore
+          path: depends/aarch64-linux-gnu/bin/minersworldcoin*
