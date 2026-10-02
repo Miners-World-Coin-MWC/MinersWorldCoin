@@ -1,6 +1,6 @@
 package=zlib-aarch64-macos
 $(package)_version=1.2.12
-$(package)_download_path=https://mirrors.ukfast.co.uk/sites/kde.org/files/krita/build/dependencies/
+$(package)_download_path=https://zlib.net/fossils/
 $(package)_file_name=zlib-$($(package)_version).tar.gz
 $(package)_sha256_hash=91844808532e5ce316b3c010929493c0244f3d37593afd6de04f71821d5136d9
 
@@ -17,10 +17,6 @@ define $(package)_config_cmds
   ./configure --static --prefix=$(host_prefix)
 endef
 
-# define $(package)_build_cmds
-#   $(MAKE) $($(package)_build_opts) libz.a
-# endef
-
 define $(package)_build_cmds
     echo "========== ZLIB BUILD ==========" && \
     echo "CC=$($(package)_cc)" && \
@@ -34,4 +30,3 @@ endef
 define $(package)_stage_cmds
   $(MAKE) DESTDIR=$($(package)_staging_dir) install $($(package)_build_opts)
 endef
-

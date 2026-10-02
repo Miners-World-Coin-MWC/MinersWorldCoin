@@ -13,7 +13,6 @@ on:
 jobs:
   build:
     name: ${{ matrix.name }}
-
     env:
       MAKEJOBS: "-j3"
       CHECK_DOC: "0"
@@ -38,11 +37,15 @@ jobs:
           - riscv64-linux
           - x86_64-linux
           - x86_64-linux-musl
+          - aarch64-win
           - x86_64-macos
           - aarch64-macos
           - x86_64-win
 
         include:
+          # ============================================================
+          # i686 Linux
+          # ============================================================
           - name: i686-linux
             host: i686-pc-linux-gnu
             container: ubuntu:20.04
@@ -54,6 +57,9 @@ jobs:
             config-opts: "--enable-zmq --enable-glibc-back-compat --with-gui=qt5 LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
 
+          # ============================================================
+          # ARMHF Linux
+          # ============================================================
           - name: armhf-linux
             host: arm-linux-gnueabihf
             container: ubuntu:20.04
@@ -65,6 +71,9 @@ jobs:
             config-opts: "--enable-glibc-back-compat LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
 
+          # ============================================================
+          # ARMv7 Linux
+          # ============================================================
           - name: armv7-linux
             host: arm-linux-gnueabihf
             container: ubuntu:20.04
@@ -73,6 +82,9 @@ jobs:
             config-opts: "--disable-tests --without-gui"
             goal: install
 
+          # ============================================================
+          # AArch64 Linux
+          # ============================================================
           - name: aarch64-linux
             host: aarch64-linux-gnu
             container: ubuntu:20.04
@@ -84,6 +96,9 @@ jobs:
             config-opts: "--enable-zmq --enable-glibc-back-compat LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
 
+          # ============================================================
+          # x86_64 Linux
+          # ============================================================
           - name: x86_64-linux
             host: x86_64-unknown-linux-gnu
             container: ubuntu:20.04
@@ -95,6 +110,14 @@ jobs:
             config-opts: "--enable-zmq --enable-glibc-back-compat --with-gui=qt5 LDFLAGS=-static-libstdc++ --disable-tests"
             goal: install
 
+          # ============================================================
+          # x86_64 Linux MUSL
+          #
+          # IMPORTANT:
+          # Keep this as Alpine.
+          # Alpine has NO bash by default, so the first step of the job
+          # (Bootstrap bash) uses `sh` to install it. Do not remove it.
+          # ============================================================
           - name: x86_64-linux-musl
             host: x86_64-linux-musl
             container: alpine:3.19
@@ -103,6 +126,9 @@ jobs:
             config-opts: "--disable-tests --without-gui CXXFLAGS=-Wno-deprecated-declarations"
             goal: install
 
+          # ============================================================
+          # RISC-V 64 Linux
+          # ============================================================
           - name: riscv64-linux
             host: riscv64-linux-gnu
             container: ubuntu:20.04
@@ -111,6 +137,9 @@ jobs:
             config-opts: "--disable-tests"
             goal: install
 
+          # ============================================================
+          # i686 Windows
+          # ============================================================
           - name: i686-win
             host: i686-w64-mingw32
             container: ubuntu:20.04
@@ -120,7 +149,7 @@ jobs:
               dpkg --add-architecture i386
             postinstall: |
               update-alternatives --set i686-w64-mingw32-gcc /usr/bin/i686-w64-mingw32-gcc-posix
-              update-alternatives --set i686-w64-mingw32-g++  /usr/bin/i686-w64-mingw32-g++-posix
+              update-alternatives --set i686-w64-mingw32-g++ /usr/bin/i686-w64-mingw32-g++-posix
               update-binfmts --import /usr/share/binfmts/wine
               update-binfmts --enable
               update-binfmts --display
@@ -131,14 +160,17 @@ jobs:
             config-opts: "--with-gui=qt5 --disable-tests"
             goal: install
 
+          # ============================================================
+          # x86_64 Windows
+          # ============================================================
           - name: x86_64-win
             host: x86_64-w64-mingw32
             container: ubuntu:20.04
             container-options: --privileged
             packages: python3 nsis g++-mingw-w64-x86-64 wine64 bc wine-binfmt
             postinstall: |
-              update-alternatives --set x86_64-w64-mingw32-gcc  /usr/bin/x86_64-w64-mingw32-gcc-posix
-              update-alternatives --set x86_64-w64-mingw32-g++  /usr/bin/x86_64-w64-mingw32-g++-posix
+              update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix
+              update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix
               update-binfmts --import /usr/share/binfmts/wine
               update-binfmts --enable
               update-binfmts --display
@@ -149,6 +181,71 @@ jobs:
             config-opts: "--with-gui=qt5 --disable-tests"
             goal: install
 
+          # ============================================================
+          # ARM64 Windows (EXPERIMENTAL)
+          #
+          # GCC mingw cannot target Windows ARM64, so this uses the
+          # llvm-mingw clang toolchain. The depends system has no native
+          # aarch64-mingw support, so postinstall creates small wrapper
+          # scripts named aarch64-w64-mingw32-gcc / g++ (+ -posix) that
+          # call clang, which is what depends looks for.
+          #
+          # Daemon + wallet, no Qt. The wallet is ENABLED because this fork's
+          # miner.cpp includes wallet/wallet.h unconditionally, so even a
+          # --disable-wallet build needs the Berkeley DB headers (depends
+          # builds BDB 4.8.30 for this host).
+          #
+          # experimental: true => failure does NOT fail the workflow.
+          # Remove that line when it is stable.
+          # ============================================================
+          - name: aarch64-win
+            host: aarch64-w64-mingw32
+            container: ubuntu:20.04
+            experimental: true
+            packages: python3 bc xz-utils curl ca-certificates
+            postinstall: |
+              set -e
+              LLVM_MINGW=llvm-mingw-20240619-ucrt-ubuntu-20.04-x86_64
+              echo "Downloading ${LLVM_MINGW}..."
+              curl -fL -sS --connect-timeout 20 --max-time 600 \
+                --retry 4 --retry-delay 5 \
+                -o /tmp/llvm-mingw.tar.xz \
+                "https://github.com/mstorsjo/llvm-mingw/releases/download/20240619/${LLVM_MINGW}.tar.xz"
+              ls -lh /tmp/llvm-mingw.tar.xz
+              echo "Extracting..."
+              tar -C /opt -xf /tmp/llvm-mingw.tar.xz
+              echo "Extracted."
+              T=/opt/${LLVM_MINGW}/bin
+              mk() {
+                if [ ! -e "$T/$1" ] && [ ! -L "$T/$1" ]; then
+                  printf '#!/bin/sh\nexec %s/%s "$@"\n' "$T" "$2" > "$T/$1"
+                  chmod +x "$T/$1"
+                fi
+              }
+              mk aarch64-w64-mingw32-gcc aarch64-w64-mingw32-clang
+              mk aarch64-w64-mingw32-gcc-posix aarch64-w64-mingw32-clang
+              mk aarch64-w64-mingw32-g++ aarch64-w64-mingw32-clang++
+              mk aarch64-w64-mingw32-g++-posix aarch64-w64-mingw32-clang++
+              echo "$T" >> "$GITHUB_PATH"
+              timeout 30 "$T/aarch64-w64-mingw32-clang" --version
+              timeout 30 "$T/aarch64-w64-mingw32-gcc-posix" --version
+            run-bench: false
+            check-security: false
+            check-symbols: false
+            dep-opts: 'NO_QT=1 NO_UPNP=1 openssl_config_opts_aarch64_mingw32="mingw64 no-asm"'
+            config-opts: "--without-gui --disable-tests --disable-bench"
+            goal: install
+
+          # ============================================================
+          # Intel macOS
+          #
+          # EXISTING / ORIGINAL BUILD
+          #
+          # This remains a Linux cross-build and continues to use the
+          # original Dogecoin MacOSX10.11 SDK first.
+          #
+          # Fallback remains the Phracker SDK.
+          # ============================================================
           - name: x86_64-macos
             host: x86_64-apple-darwin11
             container: ubuntu:20.04
@@ -159,14 +256,24 @@ jobs:
             dep-opts: ""
             config-opts: "--with-gui=qt5 --disable-tests"
             goal: deploy
+
             sdk: 10.11
             sdk-url: "https://depends.dogecoincore.org"
             sdk-filename: "MacOSX10.11.sdk.tar.gz"
             sdk-shasum: "bec9d089ebf2e2dd59b1a811a38ec78ebd5da18cbbcd6ab39d1e59f64ac5033f"
 
+            sdk-fallback-url: "https://github.com/phracker/MacOSX-SDKs/releases/download/11.3"
+            sdk-fallback-filename: "MacOSX10.11.sdk.tar.xz"
+            sdk-fallback-shasum: "d080fc672d94f95eb54651c37ede80f61761ce4c91f87061e11a20222c8d00c8"
+
+          # ============================================================
+          # Apple Silicon macOS
+          #
+          # ORIGINAL WORKING CONFIG
+          # ============================================================
           - name: aarch64-macos
             host: aarch64-apple-darwin21
-            runs-on: macos-14
+            runs-on: macos-15
             packages: cmake imagemagick libcap-dev librsvg2-bin libz-dev libbz2-dev libtiff-tools libtinfo5 xorriso
             run-bench: false
             check-security: true
@@ -177,7 +284,10 @@ jobs:
             sdk: 11.3
             sdk-url: "https://github.com/phracker/MacOSX-SDKs/releases/download/11.3"
             sdk-filename: "MacOSX11.3.sdk.tar.xz"
-            sdk-shasum: "CD4F08A75577145B8F05245A2975F7C81401D75E9535DCFFBB879EE1DEEFCBF4"
+            sdk-shasum: "cd4f08a75577145b8f05245a2975f7c81401d75e9535dcffbb879ee1deefcbf4"
+
+    continue-on-error: ${{ matrix.experimental == true }}
+    timeout-minutes: ${{ matrix.experimental == true && 90 || 360 }}
 
     runs-on: ${{ matrix.runs-on || 'ubuntu-22.04' }}
 
@@ -186,33 +296,86 @@ jobs:
       options: ${{ matrix.container-options == '' && '-e 1MWC=1MWC' || matrix.container-options }}
 
     steps:
+      - name: Bootstrap bash (Alpine only)
+        if: ${{ matrix.container && matrix.name != 'aarch64-macos' }}
+        shell: sh
+        run: |
+          if command -v apk >/dev/null 2>&1; then
+            apk add --no-cache bash
+          fi
 
       - name: Configure container (Linux only)
         if: ${{ matrix.container && matrix.name != 'aarch64-macos' }}
+        shell: bash
         run: |
           ln -snf /usr/share/zoneinfo/Etc/UTC /etc/localtime || true
           echo Etc/UTC > /etc/timezone || true
-          mkdir -p $WINEPREFIX || true
+          mkdir -p "$WINEPREFIX" || true
           uname -a
 
       - name: Configure macOS runner
         if: ${{ matrix.name == 'aarch64-macos' }}
+        shell: bash
         run: |
+          set -e
+
+          echo "============================================================"
+          echo "Native Apple Silicon macOS build"
+          echo "============================================================"
+
           uname -a
-          echo "macOS ARM runner"
+
+          echo ""
+          echo "macOS:"
+          sw_vers
+
+          echo ""
+          echo "Xcode:"
+          xcodebuild -version
+
+          echo ""
+          echo "Installed Xcode versions (for a possible pin):"
+          ls -d /Applications/Xcode* 2>/dev/null || true
+
+          echo ""
+          echo "Developer directory:"
           xcode-select -p
+
+          echo ""
+          echo "Clang:"
           clang --version
+
+          echo ""
+          echo "Architecture:"
+          arch
+
+          echo ""
+          echo "Native SDK:"
+          xcrun --sdk macosx --show-sdk-path
+
+          echo ""
+          echo "SDK version:"
+          xcrun --sdk macosx --show-sdk-version
 
       - name: Pre install
         if: ${{ matrix.preinstall }}
+        shell: bash
         run: ${{ matrix.preinstall }}
 
       - name: Install packages
+        shell: bash
         run: |
-          if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
-            echo "Installing macOS build dependencies"
+          set -e
 
-            brew update || true
+          if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
+
+            echo "============================================================"
+            echo "Installing native macOS ARM dependencies"
+            echo "============================================================"
+
+            export HOMEBREW_NO_INSTALL_UPGRADE=1
+            export HOMEBREW_NO_AUTO_UPDATE=1
+            export HOMEBREW_NO_INSTALL_CLEANUP=1
 
             brew install \
               cmake \
@@ -225,31 +388,38 @@ jobs:
               pkg-config \
               ccache \
               librsvg \
+              makedepend \
               python
 
-            echo "$(brew --prefix python)/bin" >> $GITHUB_PATH
+            BREW_PYTHON="$(brew --prefix python)/bin"
+            echo "$BREW_PYTHON" >> "$GITHUB_PATH"
+            export PATH="$BREW_PYTHON:$PATH"
 
-            export PATH="$(brew --prefix python)/bin:$PATH"
             export PIP_BREAK_SYSTEM_PACKAGES=1
 
-            # Install into user site-packages instead of Homebrew's protected
-            # system site-packages (avoids the earlier uninstall-no-record-file
-            # / Permission denied errors). Unlike a venv, --user packages are
-            # auto-detected by ANY python3.14 interpreter that isn't itself in
-            # a venv -- which matters because the depends build system spawns
-            # its own python3 subprocesses that don't reliably inherit our PATH.
-            python3 -m pip install --user --upgrade pip setuptools wheel virtualenv --break-system-packages
+            python3 -m pip install --user --upgrade \
+              pip \
+              setuptools \
+              wheel \
+              virtualenv \
+              --break-system-packages
+
             python3 -m pip install --user lief --break-system-packages || true
 
+            echo ""
             echo "Python:"
             which python3
             python3 --version
 
-            echo "Checking setuptools:"
+            echo ""
+            echo "setuptools:"
             python3 -c "import setuptools; print(setuptools.__version__)"
 
+          elif command -v apt-get >/dev/null 2>&1; then
 
-          elif command -v apt-get >/dev/null; then
+            echo "============================================================"
+            echo "Installing Debian/Ubuntu dependencies"
+            echo "============================================================"
 
             apt-get update
 
@@ -277,7 +447,11 @@ jobs:
 
             apt-get install -y ${{ matrix.packages }}
 
-          else
+          elif command -v apk >/dev/null 2>&1; then
+
+            echo "============================================================"
+            echo "Installing Alpine dependencies"
+            echo "============================================================"
 
             apk add --no-cache \
               build-base \
@@ -293,14 +467,21 @@ jobs:
               libtool \
               pkgconfig
 
+          else
+            echo "ERROR: Unsupported build environment."
+            exit 1
           fi
 
-          python3 -m ensurepip --upgrade || true
-          python3 -m pip install --upgrade pip setuptools wheel || true
-          python3 -m pip install lief || true
+          if [[ "${{ matrix.name }}" != "aarch64-macos" ]]; then
+            python3 -m ensurepip --upgrade || true
+            python3 -m pip install --upgrade pip setuptools wheel || true
+            python3 -m pip install lief || true
+          fi
 
       - name: Post install
         if: ${{ matrix.postinstall }}
+        timeout-minutes: 15
+        shell: bash
         run: ${{ matrix.postinstall }}
 
       - name: Checkout
@@ -309,8 +490,9 @@ jobs:
           fetch-depth: 0
 
       - name: Fix permissions and init submodules
+        shell: bash
         run: |
-          git config --global --add safe.directory $GITHUB_WORKSPACE
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git submodule update --init --recursive
           chmod +x depends/config.guess depends/config.sub || true
 
@@ -327,87 +509,249 @@ jobs:
         if: ${{ matrix.sdk }}
         shell: bash
         run: |
+          set -e
+
           mkdir -p depends/sdk-sources
           mkdir -p depends/SDKs
 
           cd depends/sdk-sources
 
-          FILE="${{ matrix.sdk-filename }}"
+          PRIMARY_FILE="${{ matrix.sdk-filename }}"
+          PRIMARY_URL="${{ matrix.sdk-url }}/${{ matrix.sdk-filename }}"
+          PRIMARY_SHA="${{ matrix.sdk-shasum }}"
 
-          # FIX: macOS uses shasum instead of sha256sum
-          if command -v sha256sum >/dev/null; then
-            echo "${{ matrix.sdk-shasum }}  $FILE" | sha256sum -c || \
-              curl --insecure --location --fail "${{ matrix.sdk-url }}/$FILE" -o "$FILE"
-            echo "${{ matrix.sdk-shasum }}  $FILE" | sha256sum -c
+          FALLBACK_FILE="${{ matrix.sdk-fallback-filename }}"
+          FALLBACK_URL="${{ matrix.sdk-fallback-url }}/${{ matrix.sdk-fallback-filename }}"
+          FALLBACK_SHA="${{ matrix.sdk-fallback-shasum }}"
+
+          echo "============================================================"
+          echo "Installing SDK for ${{ matrix.name }}"
+          echo "============================================================"
+
+          verify_sha256() {
+            local file="$1"
+            local expected
+            expected="$(echo "$2" | tr 'A-F' 'a-f')"
+
+            if [[ ! -f "$file" ]]; then
+              return 1
+            fi
+
+            local actual
+            if command -v sha256sum >/dev/null 2>&1; then
+              actual="$(sha256sum "$file" | awk '{print $1}')"
+            else
+              actual="$(shasum -a 256 "$file" | awk '{print $1}')"
+            fi
+
+            if [[ "$actual" == "$expected" ]]; then
+              return 0
+            fi
+
+            echo "  checksum mismatch for $file"
+            echo "    expected: $expected"
+            echo "    actual:   $actual"
+            return 1
+          }
+
+          download_file() {
+            local url="$1"
+            local file="$2"
+
+            echo "Downloading:"
+            echo "  $url"
+            echo "  -> $file"
+
+            curl \
+              --location \
+              --fail \
+              --show-error \
+              --silent \
+              --retry 3 \
+              --retry-delay 2 \
+              "$url" \
+              -o "$file"
+          }
+
+          echo ""
+          echo "------------------------------------------------------------"
+          echo "Attempting PRIMARY SDK"
+          echo "------------------------------------------------------------"
+          echo "URL: $PRIMARY_URL"
+          echo "SHA256: $PRIMARY_SHA"
+
+          PRIMARY_OK=false
+
+          if verify_sha256 "$PRIMARY_FILE" "$PRIMARY_SHA"; then
+            echo "Primary SDK already exists and checksum is valid."
+            PRIMARY_OK=true
           else
-            echo "${{ matrix.sdk-shasum }}  $FILE" | shasum -a 256 -c || \
-              curl --location --fail "${{ matrix.sdk-url }}/$FILE" -o "$FILE"
-            echo "${{ matrix.sdk-shasum }}  $FILE" | shasum -a 256 -c
+            echo "Primary SDK is missing or checksum is invalid."
+            rm -f "$PRIMARY_FILE"
+
+            if download_file "$PRIMARY_URL" "$PRIMARY_FILE"; then
+              if verify_sha256 "$PRIMARY_FILE" "$PRIMARY_SHA"; then
+                echo "Primary SDK downloaded and checksum verified."
+                PRIMARY_OK=true
+              else
+                echo "Primary SDK downloaded but checksum verification FAILED."
+                rm -f "$PRIMARY_FILE"
+              fi
+            else
+              echo "Primary SDK download FAILED."
+            fi
           fi
+
+          if [[ "$PRIMARY_OK" != "true" ]]; then
+            echo ""
+            echo "============================================================"
+            echo "PRIMARY SDK UNAVAILABLE"
+            echo "Switching to FALLBACK SDK"
+            echo "============================================================"
+            echo "URL: $FALLBACK_URL"
+            echo "SHA256: $FALLBACK_SHA"
+
+            if [[ -z "$FALLBACK_FILE" || -z "$FALLBACK_URL" || -z "$FALLBACK_SHA" ]]; then
+              echo "ERROR: No fallback SDK is configured for this build."
+              exit 1
+            fi
+
+            if verify_sha256 "$FALLBACK_FILE" "$FALLBACK_SHA"; then
+              echo "Fallback SDK already exists and checksum is valid."
+            else
+              echo "Fallback SDK is missing or checksum is invalid."
+              rm -f "$FALLBACK_FILE"
+
+              if ! download_file "$FALLBACK_URL" "$FALLBACK_FILE"; then
+                echo "ERROR: Fallback SDK download FAILED."
+                exit 1
+              fi
+
+              if ! verify_sha256 "$FALLBACK_FILE" "$FALLBACK_SHA"; then
+                echo "ERROR: Fallback SDK checksum verification FAILED."
+                exit 1
+              fi
+
+              echo "Fallback SDK downloaded and checksum verified."
+            fi
+
+            SDK_FILE="$FALLBACK_FILE"
+          else
+            SDK_FILE="$PRIMARY_FILE"
+          fi
+
+          echo ""
+          echo "============================================================"
+          echo "SDK selected:"
+          echo "$SDK_FILE"
+          echo "============================================================"
 
           cd ../..
 
-          tar -C depends/SDKs -xf depends/sdk-sources/$FILE
+          rm -rf depends/SDKs/*
+          tar -C depends/SDKs -xf "depends/sdk-sources/$SDK_FILE"
+
+          echo ""
+          echo "SDK extraction complete."
+
+      - name: Patch depends BDB for ARM64 Windows
+        if: ${{ matrix.host == 'aarch64-w64-mingw32' }}
+        shell: bash
+        run: |
+          set -e
+
+          python3 - <<'PY'
+          import re
+          p = 'depends/packages/bdb.mk'
+          s = open(p).read()
+          if 'rep; nop' in s:
+              print('bdb.mk already patched, nothing to do')
+              raise SystemExit(0)
+          fix = ("sed -i.arm 's/__asm__ volatile (\"rep; nop\" : : );/"
+                 "__asm__ volatile (\"yield\" : : );/' dbinc/mutex_int.h")
+          m = re.search(r'define \$\(package\)_preprocess_cmds\n', s)
+          if m:
+              s = s[:m.end()] + '  ' + fix + ' && \\\n' + s[m.end():]
+          else:
+              s += '\ndefine $(package)_preprocess_cmds\n  ' + fix + '\nendef\n'
+          open(p, 'w').write(s)
+          print('patched', p)
+          PY
+
+          echo "--- bdb.mk preprocess block after patch ---"
+          sed -n '/preprocess_cmds/,/^endef/p' depends/packages/bdb.mk
 
       - name: Build depends
+        shell: bash
         run: |
+          set -e
+
           export CONFIG_SHELL=/bin/bash
           export SHELL=/bin/bash
+
           if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
 
-            echo "Configuring native macOS ARM build environment"
+            echo "============================================================"
+            echo "Configuring native Apple Silicon macOS build"
+            echo "============================================================"
 
-            export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-            export MACOSX_DEPLOYMENT_TARGET=11.0
+            export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
+            export MACOSX_DEPLOYMENT_TARGET="11.0"
 
             export CC="$(xcrun --find clang)"
             export CXX="$(xcrun --find clang++)"
 
-            export HOMEBREW_PREFIX=$(brew --prefix)
-
+            export HOMEBREW_PREFIX="$(brew --prefix)"
             export PATH="$HOMEBREW_PREFIX/bin:$PATH"
 
-            # Use Homebrew's python3 directly -- setuptools/pip/wheel/lief
-            # were installed with --user in "Install packages", so this
-            # interpreter (and any python3 subprocess the depends build
-            # spawns) picks them up automatically via user site-packages.
             export PYTHON="$HOMEBREW_PREFIX/bin/python3"
             export PYTHON3="$HOMEBREW_PREFIX/bin/python3"
-
             export PIP_BREAK_SYSTEM_PACKAGES=1
 
-            export CONFIG_SHELL=/bin/bash
-            export SHELL=/bin/bash
+            echo "Python:"
+            "$PYTHON" --version
 
-            echo "Using Python:"
-            $PYTHON --version
-
-            echo "Using:"
+            echo ""
             echo "SDKROOT=$SDKROOT"
             echo "CC=$CC"
             echo "CXX=$CXX"
-            echo "OPENSSL_TARGET=$OPENSSL_TARGET"
+            echo "MACOSX_DEPLOYMENT_TARGET=$MACOSX_DEPLOYMENT_TARGET"
 
-            $PYTHON -m pip install --user --upgrade ez_setup --break-system-packages || true
+            "$PYTHON" -m pip install --user \
+              --upgrade ez_setup \
+              --break-system-packages || true
 
-            $PYTHON -c "import setuptools; print('setuptools OK')"
+            "$PYTHON" -c "import setuptools; print('setuptools OK')"
 
-            ln -sf "$PYTHON" /usr/local/bin/python || true
-
-            # Persist the SDK path for later job steps. `export` here only
-            # applies within this step's shell process, so anything the
-            # "Build MinersWorldCoin" step needs must be written to
-            # $GITHUB_ENV explicitly.
             echo "MACOS_SDK_PATH=$SDKROOT" >> "$GITHUB_ENV"
             echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> "$GITHUB_ENV"
 
+            mkdir -p "$GITHUB_WORKSPACE/.shim"
+            printf '#include <math.h>\n' > "$GITHUB_WORKSPACE/.shim/fp.h"
+
+            export CCC_OVERRIDE_OPTIONS="+-Dfdopen=fdopen +-I$GITHUB_WORKSPACE/.shim"
+
+            make $MAKEJOBS -C depends \
+              HOST=${{ matrix.host }} \
+              OPENSSL_TARGET=$OPENSSL_TARGET \
+              ${{ matrix.dep-opts }}
+
+          else
+
+            if [[ "${{ matrix.host }}" == "aarch64-w64-mingw32" ]]; then
+              mkdir -p "$GITHUB_WORKSPACE/.shim"
+              printf '%s\n' '__asm__(".macro rep\n.endm");' > "$GITHUB_WORKSPACE/.shim/arm64-rep.h"
+              export CCC_OVERRIDE_OPTIONS="+-include$GITHUB_WORKSPACE/.shim/arm64-rep.h"
+              echo "CCC_OVERRIDE_OPTIONS=$CCC_OVERRIDE_OPTIONS"
+              cat "$GITHUB_WORKSPACE/.shim/arm64-rep.h"
+            fi
+
+            make $MAKEJOBS -C depends \
+              HOST=${{ matrix.host }} \
+              OPENSSL_TARGET=$OPENSSL_TARGET \
+              ${{ matrix.dep-opts }}
+
           fi
-
-
-          make $MAKEJOBS -C depends \
-            HOST=${{ matrix.host }} \
-            OPENSSL_TARGET=$OPENSSL_TARGET \
-            ${{ matrix.dep-opts }}
 
       - name: CCache
         uses: actions/cache@v4
@@ -420,56 +764,88 @@ jobs:
       - name: Build MinersWorldCoin
         env:
           GIT_COMMIT_ID: ${{ github.sha }}
+        shell: bash
         run: |
+          set -e
+
           chmod +x autogen.sh
           chmod -R +x depends || true
           chmod +x share/genbuild.sh
 
+          if [[ "${{ matrix.host }}" == "aarch64-w64-mingw32" ]]; then
+            sed -i 's/x86_64-\*)\([[:space:]]*\)WINDOWS_BITS=64/x86_64-*|aarch64-*)\1WINDOWS_BITS=64/' configure.ac
+            echo "WINDOWS_BITS lines in configure.ac after patch:"
+            grep -n "WINDOWS_BITS" configure.ac || true
+            grep -q 'aarch64-\*)' configure.ac || { echo "ERROR: configure.ac patch did not apply"; exit 1; }
+          fi
+
           SHORT_COMMIT=$(echo "$GIT_COMMIT_ID" | cut -c1-7)
-          depends/${{ matrix.host }}/native/bin/ccache --max-size=$CCACHE_SIZE
+
+          depends/${{ matrix.host }}/native/bin/ccache --max-size="$CCACHE_SIZE"
 
           ./autogen.sh
           chmod +x configure || true
 
-          # Only the aarch64-macos leg needs an explicit sysroot. Everywhere
-          # else SDKFLAGS stays empty so nothing changes for those builds.
           SDKFLAGS=""
           EXTRA_LDFLAGS=""
+          CXXSTD="c++17"
+
           if [[ "${{ matrix.name }}" == "aarch64-macos" ]]; then
             SDKFLAGS="-isysroot ${MACOS_SDK_PATH}"
             EXTRA_LDFLAGS="-L${MACOS_SDK_PATH}/usr/lib"
           fi
 
-          ./configure --prefix=`pwd`/depends/${{ matrix.host }} \
+          ./configure \
+            --prefix="$(pwd)/depends/${{ matrix.host }}" \
             ${{ matrix.config-opts }} \
             --enable-reduce-exports \
             CFLAGS="$SDKFLAGS -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-            CXXFLAGS="$SDKFLAGS -std=c++17 -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
-            LDFLAGS="$SDKFLAGS $EXTRA_LDFLAGS" \
-            || (cat config.log && false)
+            CXXFLAGS="$SDKFLAGS -std=$CXXSTD -pipe -O2 -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            LDFLAGS="$SDKFLAGS $EXTRA_LDFLAGS" 2>&1 | tee configure.console \
+            || (
+              echo "============================================================"
+              echo "configure FAILED. Last 40 lines of configure output:"
+              echo "============================================================"
+              tail -n 40 configure.console
+              echo "============================================================"
+              echo "error lines from config.log:"
+              grep -nE 'configure:[0-9]+: error:|^configure: error:' config.log || true
+              false
+            )
 
           make $MAKEJOBS ${{ matrix.goal }} \
-            CXXFLAGS="-std=c++17 $SDKFLAGS" \
-            || (echo "Build failure. Verbose build follows." && make ${{ matrix.goal }} CXXFLAGS="-std=c++17 $SDKFLAGS" V=1 ; false)
+            CXXFLAGS="-std=$CXXSTD $SDKFLAGS" \
+            || (
+              echo "Build failure. Verbose build follows."
+              make ${{ matrix.goal }} \
+                CXXFLAGS="-std=$CXXSTD $SDKFLAGS" \
+                V=1
+              false
+            )
 
       - name: Run benchmark
         if: ${{ matrix.run-bench }}
+        shell: bash
         run: |
           src/bench/bench_minersworldcoin > ${{ matrix.name }}-bench.csv
           cat ${{ matrix.name }}-bench.csv
 
       - name: Fix permissions for security-check.py
+        shell: bash
         run: chmod +x contrib/devtools/security-check.py
 
       - name: Check security
         if: ${{ matrix.check-security }}
+        shell: bash
         run: make -C src check-security
 
       - name: Check symbols
         if: ${{ matrix.check-symbols }}
+        shell: bash
         run: make -C src check-symbols
 
       - name: Cleanup qa artifacts
+        shell: bash
         run: rm -rf qa/cache || true
 
       - name: Upload artifacts
@@ -486,3 +862,536 @@ jobs:
             dist/*.dmg
             dist/*.app
             ${{ matrix.name }}-bench.csv
+
+  # ==============================================================
+  # Android ARM64 / Termux
+  #
+  # Android NDK cross-compile on a normal Ubuntu runner, producing
+  # standalone native ARM64 executables:
+  #
+  #   minersworldcoind
+  #   minersworldcoin-cli
+  #   minersworldcoin-tx
+  #
+  # These are native Android/Termux binaries, NOT an APK.
+  #
+  # The wallet needs:
+  #   OpenSSL 1.1.1w
+  #   libevent 2.1.12
+  #   Berkeley DB 4.8.30
+  #   Boost 1.74
+  #
+  # API 24 is required because the wallet networking code uses
+  # getifaddrs(), which Android provides from API 24.
+  #
+  # No GUI, no ZMQ, no UPnP.
+  # Wallet ENABLED.
+  # ==============================================================
+
+  android-arm64:
+    name: android-arm64
+    runs-on: ubuntu-22.04
+    continue-on-error: false
+    timeout-minutes: 120
+
+    env:
+      API: "24"
+      TARGET: aarch64-linux-android
+      MAKEJOBS: "-j3"
+
+    steps:
+
+      # ============================================================
+      # Checkout
+      # ============================================================
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      # ============================================================
+      # Java
+      # ============================================================
+
+      - name: Setup Java 17 for Android build
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # ============================================================
+      # Android SDK
+      # ============================================================
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+
+      # ============================================================
+      # Android NDK
+      # ============================================================
+
+      - name: Install Android NDK
+        shell: bash
+        run: |
+          set -e
+
+          sdkmanager --install "ndk;29.0.14206865"
+
+          echo "ANDROID_NDK_HOME=${ANDROID_SDK_ROOT}/ndk/29.0.14206865" >> "$GITHUB_ENV"
+
+      # ============================================================
+      # Host build tools
+      # ============================================================
+
+      - name: Install host build tools
+        shell: bash
+        run: |
+          set -e
+
+          sudo apt-get update
+
+          sudo apt-get install -y \
+            build-essential \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            autotools-dev \
+            bsdmainutils \
+            python3 \
+            curl \
+            ca-certificates \
+            bzip2 \
+            unzip
+
+      # ============================================================
+      # Android dependency cache
+      #
+      # v7 invalidates all previous Android dependency caches because
+      # the Berkeley DB atomic compatibility patch has been corrected.
+      #
+      # The BDB patch is kept entirely inside the Berkeley DB source
+      # tree and does NOT define atomic_init globally.
+      # ============================================================
+
+      - name: Restore Android dependencies cache
+        id: deps-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: android-deps
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v7
+
+      - name: Build static dependencies (OpenSSL, libevent, BDB 4.8.30, Boost)
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 60
+        shell: bash
+        run: |
+          set -e
+
+          P="$GITHUB_WORKSPACE/android-deps"
+
+          mkdir -p "$P"
+          mkdir -p build-deps
+
+          cd build-deps
+
+          TOOLCHAIN="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64"
+          export PATH="${TOOLCHAIN}/bin:${PATH}"
+
+          fetch() {
+            curl \
+              -fL \
+              -sS \
+              --retry 4 \
+              --retry-delay 5 \
+              --connect-timeout 20 \
+              --max-time 900 \
+              -o "$2" \
+              "$1"
+          }
+
+          # ==========================================================
+          # OpenSSL
+          # ==========================================================
+
+          fetch \
+            https://www.openssl.org/source/old/1.1.1/openssl-1.1.1w.tar.gz \
+            openssl.tar.gz
+
+          tar xzf openssl.tar.gz
+
+          (
+            cd openssl-1.1.1w
+
+            export ANDROID_NDK_ROOT="${ANDROID_NDK_HOME}"
+
+            ./Configure \
+              android-arm64 \
+              -D__ANDROID_API__="${API}" \
+              no-shared \
+              no-tests \
+              no-comp \
+              --prefix="$P" \
+              --openssldir="$P/ssl"
+
+            make ${MAKEJOBS} build_libs
+            make install_dev
+          )
+
+          # ==========================================================
+          # Android compiler
+          # ==========================================================
+
+          export CC="${TOOLCHAIN}/bin/${TARGET}${API}-clang"
+          export CXX="${TOOLCHAIN}/bin/${TARGET}${API}-clang++"
+          export AR="${TOOLCHAIN}/bin/llvm-ar"
+          export RANLIB="${TOOLCHAIN}/bin/llvm-ranlib"
+          export STRIP="${TOOLCHAIN}/bin/llvm-strip"
+
+          echo "compiler info..."
+          "$CC" --version
+          "$CXX" --version
+
+          # ==========================================================
+          # libevent
+          # ==========================================================
+
+          fetch \
+            https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz \
+            libevent.tar.gz
+
+          tar xzf libevent.tar.gz
+
+          (
+            cd libevent-2.1.12-stable
+
+            ./configure \
+              --host="${TARGET}" \
+              --build=x86_64-pc-linux-gnu \
+              --prefix="$P" \
+              --disable-shared \
+              --enable-static \
+              --with-pic \
+              --disable-openssl \
+              --disable-samples \
+              --disable-libevent-regress
+
+            make ${MAKEJOBS}
+            make install
+          )
+
+          # ==========================================================
+          # Berkeley DB 4.8.30
+          # ==========================================================
+
+          fetch \
+            https://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz \
+            db-4.8.30.NC.tar.gz
+
+          echo "12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef  db-4.8.30.NC.tar.gz" | sha256sum -c -
+
+          tar xzf db-4.8.30.NC.tar.gz
+
+          (
+            cd db-4.8.30.NC
+
+            # --------------------------------------------------------
+            # Berkeley DB 4.8 atomic compatibility
+            #
+            # Android libc++ provides its own atomic_init().
+            #
+            # DO NOT define:
+            #
+            #   -Datomic_init=atomic_init_db
+            #
+            # globally, because that leaks into libc++ headers.
+            #
+            # Instead, rename Berkeley DB's own atomic_init function
+            # and its Berkeley DB call sites only.
+            #
+            # This follows the established Berkeley DB 4.8 C++11
+            # compatibility patch used by Bitcoin-derived projects.
+            # --------------------------------------------------------
+
+            sed -i \
+              's/__atomic_compare_exchange/__atomic_compare_exchange_db/g' \
+              dbinc/atomic.h
+
+            sed -i \
+              's/atomic_init/atomic_init_db/g' \
+              dbinc/atomic.h \
+              mp/mp_region.c \
+              mp/mp_mvcc.c \
+              mp/mp_fget.c \
+              mutex/mut_method.c \
+              mutex/mut_tas.c
+
+            # The Berkeley DB archive can contain read-only files in
+            # dist/. Make the directory and its files writable before
+            # replacing config.sub/config.guess for Android.
+            chmod -R u+rwX dist/
+
+            cp /usr/share/automake-*/config.sub dist/config.sub
+            cp /usr/share/automake-*/config.guess dist/config.guess
+
+            cd build_unix
+
+            CFLAGS="-O2 -fPIC -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=incompatible-pointer-types -Wno-deprecated-non-prototype" \
+            CXXFLAGS="-std=c++11 -O2 -fPIC -Wno-deprecated-declarations -Wno-deprecated-non-prototype" \
+            ../dist/configure \
+              --host="${TARGET}" \
+              --build=x86_64-pc-linux-gnu \
+              --prefix="$P" \
+              --enable-cxx \
+              --disable-shared \
+              --with-pic \
+              --with-mutex=POSIX/pthreads
+
+            make ${MAKEJOBS} libdb_cxx-4.8.a libdb-4.8.a
+            make install_lib install_include
+          )
+
+          # ==========================================================
+          # Boost 1.74
+          # ==========================================================
+
+          fetch \
+            https://archives.boost.io/release/1.74.0/source/boost_1_74_0.tar.bz2 \
+            boost.tar.bz2
+
+          tar xjf boost.tar.bz2
+
+          (
+            cd boost_1_74_0
+
+            ANDROID_CC="${CC}"
+            ANDROID_CXX="${CXX}"
+            ANDROID_AR="${AR}"
+            ANDROID_RANLIB="${RANLIB}"
+
+            unset CC
+            unset CXX
+            unset AR
+            unset RANLIB
+
+            echo "============================================================"
+            echo "Bootstrapping HOST Boost.Build"
+            echo "============================================================"
+
+            ./bootstrap.sh --with-toolset=gcc
+
+            export CC="${ANDROID_CC}"
+            export CXX="${ANDROID_CXX}"
+            export AR="${ANDROID_AR}"
+            export RANLIB="${ANDROID_RANLIB}"
+
+            echo "============================================================"
+            echo "Verifying HOST b2"
+            echo "============================================================"
+
+            file ./b2
+
+            test -x ./b2
+
+            ./b2 -v || true
+
+            echo "============================================================"
+            echo "Verifying Android Boost compiler"
+            echo "============================================================"
+
+            echo "ANDROID_CC=${ANDROID_CC}"
+            echo "ANDROID_CXX=${ANDROID_CXX}"
+            echo "ANDROID_AR=${ANDROID_AR}"
+            echo "ANDROID_RANLIB=${ANDROID_RANLIB}"
+
+            "${ANDROID_CC}" --version
+
+            echo "============================================================"
+            echo "Boost Android user-config.jam"
+            echo "============================================================"
+
+            cat > user-config.jam <<EOF
+          using clang : android : ${ANDROID_CXX} :
+            <compileflags>--target=${TARGET}${API}
+            <compileflags>-fPIC
+            <compileflags>-Wno-deprecated-declarations
+            <compileflags>-Wno-deprecated-non-prototype
+            <compileflags>-D_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION
+            <linkflags>--target=${TARGET}${API}
+            <archiver>${ANDROID_AR}
+            <ranlib>${ANDROID_RANLIB} ;
+          EOF
+
+            cat user-config.jam
+
+            echo "============================================================"
+            echo "Boost Android cross-build"
+            echo "============================================================"
+
+            ./b2 \
+              ${MAKEJOBS} \
+              --user-config=user-config.jam \
+              --layout=system \
+              --prefix="$P" \
+              toolset=clang-android \
+              target-os=android \
+              architecture=arm \
+              address-model=64 \
+              binary-format=elf \
+              link=static \
+              runtime-link=static \
+              variant=release \
+              threading=multi \
+              --with-system \
+              --with-filesystem \
+              --with-thread \
+              --with-chrono \
+              --with-program_options \
+              install
+
+            find "$P/lib" -maxdepth 1 -type f -name 'libboost*.a' -print | sort
+          )
+
+      - name: Save Android dependencies cache
+        if: steps.deps-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: android-deps
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v7
+
+      # ============================================================
+      # Build MinersWorldCoin
+      # ============================================================
+
+      - name: Build MinersWorldCoin for Android ARM64 / Termux
+        shell: bash
+        run: |
+          set -e
+
+          P="$GITHUB_WORKSPACE/android-deps"
+
+          TOOLCHAIN="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64"
+
+          export PATH="${TOOLCHAIN}/bin:${PATH}"
+
+          export CC="${TOOLCHAIN}/bin/${TARGET}${API}-clang"
+          export CXX="${TOOLCHAIN}/bin/${TARGET}${API}-clang++"
+          export AR="${TOOLCHAIN}/bin/llvm-ar"
+          export RANLIB="${TOOLCHAIN}/bin/llvm-ranlib"
+          export STRIP="${TOOLCHAIN}/bin/llvm-strip"
+
+          SHORT_COMMIT="$(echo "${{ github.sha }}" | cut -c1-7)"
+
+          echo "============================================================"
+          echo "Android ARM64 / Termux build"
+          echo "============================================================"
+          echo "Target: ${TARGET}"
+          echo "API:    ${API}"
+          echo "NDK:    ${ANDROID_NDK_HOME}"
+          echo "CC:     ${CC}"
+          echo "CXX:    ${CXX}"
+          echo ""
+
+          "$CC" --version
+          "$CXX" --version
+
+          chmod +x autogen.sh share/genbuild.sh || true
+
+          ./autogen.sh
+
+          chmod +x configure || true
+
+          ./configure \
+            --host="${TARGET}" \
+            --build=x86_64-pc-linux-gnu \
+            --prefix="${PWD}/android-out" \
+            --without-gui \
+            --disable-tests \
+            --disable-bench \
+            --disable-zmq \
+            --without-miniupnpc \
+            --enable-reduce-exports \
+            --with-boost="$P" \
+            --with-boost-libdir="$P/lib" \
+            BDB_CFLAGS="-I$P/include" \
+            BDB_LIBS="-L$P/lib -ldb_cxx-4.8" \
+            EVENT_CFLAGS="-I$P/include" \
+            EVENT_LIBS="-L$P/lib -levent_extra -levent_core" \
+            EVENT_PTHREADS_CFLAGS="-I$P/include" \
+            EVENT_PTHREADS_LIBS="-L$P/lib -levent_extra -levent_pthreads -levent_core" \
+            CRYPTO_CFLAGS="-I$P/include" \
+            CRYPTO_LIBS="-L$P/lib -lcrypto" \
+            CPPFLAGS="-I$P/include -Dfread_unlocked=fread -Dfwrite_unlocked=fwrite -Dfflush_unlocked=fflush" \
+            CFLAGS="-O2 -pipe -fPIC -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            CXXFLAGS="-std=c++14 -O2 -pipe -fPIC -Wno-deprecated-declarations -DGIT_COMMIT_ID=\"$SHORT_COMMIT\"" \
+            LDFLAGS="-L$P/lib -static-libstdc++" \
+            2>&1 | tee configure.console \
+            || (
+              echo ""
+              echo "============================================================"
+              echo "configure failed"
+              echo "============================================================"
+              tail -n 80 configure.console
+
+              echo ""
+              echo "configure errors from config.log:"
+              grep -nE \
+                'configure:[0-9]+: error:|^configure: error:' \
+                config.log || true
+
+              false
+            )
+
+          make ${MAKEJOBS} \
+            || (
+              echo ""
+              echo "============================================================"
+              echo "Android build failure - verbose build follows"
+              echo "============================================================"
+
+              make V=1
+
+              false
+            )
+
+          echo ""
+          echo "============================================================"
+          echo "Stripping Android ARM64 binaries"
+          echo "============================================================"
+
+          "${STRIP}" --strip-unneeded \
+            src/minersworldcoind \
+            src/minersworldcoin-cli \
+            src/minersworldcoin-tx
+
+          echo ""
+          echo "============================================================"
+          echo "Android ARM64 binary information"
+          echo "============================================================"
+
+          file \
+            src/minersworldcoind \
+            src/minersworldcoin-cli \
+            src/minersworldcoin-tx
+
+          echo ""
+          echo "Binary sizes:"
+
+          ls -lh \
+            src/minersworldcoind \
+            src/minersworldcoin-cli \
+            src/minersworldcoin-tx
+
+      - name: Upload Android ARM64 / Termux artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: minersworldcoin-${{ github.sha }}-android-arm64-termux
+          if-no-files-found: error
+          path: |
+            src/minersworldcoind
+            src/minersworldcoin-cli
+            src/minersworldcoin-tx

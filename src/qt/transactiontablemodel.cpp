@@ -79,7 +79,6 @@ public:
      */
     void refreshWallet()
     {
-        qDebug() << "TransactionTablePriv::refreshWallet";
         cachedWallet.clear();
         {
             LOCK2(cs_main, wallet->cs_wallet);
@@ -98,8 +97,6 @@ public:
      */
     void updateWallet(const uint256 &hash, int status, bool showTransaction)
     {
-        qDebug() << "TransactionTablePriv::updateWallet: " + QString::fromStdString(hash.ToString()) + " " + QString::number(status);
-
         // Find bounds of this transaction in model
         QList<TransactionRecord>::iterator lower = qLowerBound(
             cachedWallet.begin(), cachedWallet.end(), hash, TxLessThan());
@@ -116,10 +113,6 @@ public:
             if(!showTransaction && inModel)
                 status = CT_DELETED; /* In model, but want to hide, treat as deleted */
         }
-
-        qDebug() << "    inModel=" + QString::number(inModel) +
-                    " Index=" + QString::number(lowerIndex) + "-" + QString::number(upperIndex) +
-                    " showTransaction=" + QString::number(showTransaction) + " derivedStatus=" + QString::number(status);
 
         switch(status)
         {
@@ -279,12 +272,15 @@ void TransactionTableModel::updateTransaction(const QString &hash, int status, b
 
 void TransactionTableModel::updateConfirmations()
 {
-    // Blocks came in since last poll.
-    // Invalidate status (number of confirmations) and (possibly) description
-    //  for all rows. Qt is smart enough to only actually request the data for the
-    //  visible rows.
-    Q_EMIT dataChanged(index(0, Status), index(priv->size()-1, Status));
-    Q_EMIT dataChanged(index(0, ToAddress), index(priv->size()-1, ToAddress));
+    // A new block can change confirmation status for many transactions.
+    // Mark cached records stale, then let the view request data only for rows
+    // it actually needs to repaint. Avoid emitting a second range for ToAddress:
+    // the displayed address itself does not change when a block arrives.
+    const int count = priv->size();
+    if (count <= 0)
+        return;
+
+    Q_EMIT dataChanged(index(0, Status), index(count - 1, Status));
 }
 
 int TransactionTableModel::rowCount(const QModelIndex &parent) const
@@ -724,18 +720,29 @@ struct TransactionNotification
 {
 public:
     TransactionNotification() {}
+
     TransactionNotification(uint256 _hash, ChangeType _status, bool _showTransaction):
-        hash(_hash), status(_status), showTransaction(_showTransaction) {}
+        hash(_hash),
+        status(_status),
+        showTransaction(_showTransaction)
+    {
+    }
 
     void invoke(QObject *ttm)
     {
         QString strHash = QString::fromStdString(hash.GetHex());
-        qDebug() << "NotifyTransactionChanged: " + strHash + " status= " + QString::number(status);
+
+        qDebug() << "NotifyTransactionChanged: "
+                 << strHash
+                 << "status="
+                 << QString::number(status);
+
         QMetaObject::invokeMethod(ttm, "updateTransaction", Qt::QueuedConnection,
                                   Q_ARG(QString, strHash),
                                   Q_ARG(int, status),
                                   Q_ARG(bool, showTransaction));
     }
+
 private:
     uint256 hash;
     ChangeType status;
