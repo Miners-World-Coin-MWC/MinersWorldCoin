@@ -976,9 +976,10 @@ jobs:
       # ============================================================
       # Android dependency cache
       #
-      # v5 invalidates the previous dependency cache because the
-      # Boost 1.74 Android configuration now includes the libc++
-      # compatibility define required by modern Android NDKs.
+      # v6 invalidates the previous dependency cache because the
+      # Berkeley DB atomic_init workaround is now applied only to
+      # the affected Berkeley DB source files instead of globally
+      # replacing atomic_init inside dbinc/atomic.h.
       # ==============================================================
 
       - name: Restore Android dependencies cache
@@ -1093,13 +1094,22 @@ jobs:
           (
             cd db-4.8.30.NC
 
+            # Android libc++ also defines atomic_init(). Do NOT rename
+            # atomic_init globally in dbinc/atomic.h because that causes
+            # the replacement to leak into the Android C++ standard
+            # library headers and breaks libc++ itself.
+            #
+            # Keep the existing Berkeley DB-specific compare-exchange
+            # workaround, and patch only the Berkeley DB source files
+            # that need the renamed initialization function.
             sed -i \
               's/atomic_compare_exchange/atomic_compare_exchange_db/g' \
               dbinc/atomic.h
 
             sed -i \
-              's/atomic_init/atomic_init_db/g' \
-              dbinc/atomic.h
+              's/\batomic_init[[:space:]]*(/atomic_init_db(/g' \
+              mp/mp_region.c \
+              mp/mp_mvcc.c
 
             # The Berkeley DB archive can contain read-only files in
             # dist/. Make the directory and its files writable before
@@ -1111,8 +1121,8 @@ jobs:
 
             cd build_unix
 
-            CFLAGS="-O2 -fPIC -Datomic_init=atomic_init_db -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=incompatible-pointer-types -Wno-deprecated-non-prototype" \
-            CXXFLAGS="-std=c++11 -O2 -fPIC -Datomic_init=atomic_init_db -Wno-deprecated-declarations -Wno-deprecated-non-prototype" \
+            CFLAGS="-O2 -fPIC -Wno-error=implicit-function-declaration -Wno-error=int-conversion -Wno-error=incompatible-pointer-types -Wno-deprecated-non-prototype" \
+            CXXFLAGS="-std=c++11 -O2 -fPIC -Wno-deprecated-declarations -Wno-deprecated-non-prototype" \
             ../dist/configure \
               --host="${TARGET}" \
               --build=x86_64-pc-linux-gnu \
@@ -1289,7 +1299,7 @@ jobs:
             BDB_CFLAGS="-I$P/include" \
             BDB_LIBS="-L$P/lib -ldb_cxx-4.8" \
             EVENT_CFLAGS="-I$P/include" \
-            EVENT_LIBS="-L$P/lib -levent_core -levent_pthreads" \
+            EVENT_LIBS="-L$P/lib -levent_core" \
             EVENT_PTHREADS_CFLAGS="-I$P/include" \
             EVENT_PTHREADS_LIBS="-L$P/lib -levent_pthreads -levent_core" \
             CRYPTO_CFLAGS="-I$P/include" \
@@ -1364,3 +1374,4 @@ jobs:
             src/minersworldcoind
             src/minersworldcoin-cli
             src/minersworldcoin-tx
+            
