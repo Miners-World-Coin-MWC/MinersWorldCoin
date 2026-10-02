@@ -216,11 +216,6 @@ jobs:
               tar -C /opt -xf /tmp/llvm-mingw.tar.xz
               echo "Extracted."
               T=/opt/${LLVM_MINGW}/bin
-              # llvm-mingw already ships aarch64-w64-mingw32-gcc / g++ as
-              # symlinks to its clang-target-wrapper. NEVER write through
-              # those (an earlier version overwrote the wrapper with a script
-              # that exec'd itself = infinite loop). Only create names that
-              # do not exist yet.
               mk() {
                 if [ ! -e "$T/$1" ] && [ ! -L "$T/$1" ]; then
                   printf '#!/bin/sh\nexec %s/%s "$@"\n' "$T" "$2" > "$T/$1"
@@ -976,18 +971,19 @@ jobs:
       # ============================================================
       # Android dependency cache
       #
-      # v6 invalidates the previous dependency cache because the
-      # Berkeley DB atomic_init workaround is now applied only to
-      # the affected Berkeley DB source files instead of globally
-      # replacing atomic_init inside dbinc/atomic.h.
-      # ==============================================================
+      # v7 invalidates all previous Android dependency caches because
+      # the Berkeley DB atomic compatibility patch has been corrected.
+      #
+      # The BDB patch is kept entirely inside the Berkeley DB source
+      # tree and does NOT define atomic_init globally.
+      # ============================================================
 
       - name: Restore Android dependencies cache
         id: deps-cache
         uses: actions/cache/restore@v4
         with:
           path: android-deps
-          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v6
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v7
 
       - name: Build static dependencies (OpenSSL, libevent, BDB 4.8.30, Boost)
         if: steps.deps-cache.outputs.cache-hit != 'true'
@@ -995,9 +991,12 @@ jobs:
         shell: bash
         run: |
           set -e
+
           P="$GITHUB_WORKSPACE/android-deps"
+
           mkdir -p "$P"
           mkdir -p build-deps
+
           cd build-deps
 
           TOOLCHAIN="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64"
@@ -1019,7 +1018,9 @@ jobs:
           # OpenSSL
           # ==========================================================
 
-          fetch https://www.openssl.org/source/old/1.1.1/openssl-1.1.1w.tar.gz openssl.tar.gz
+          fetch \
+            https://www.openssl.org/source/old/1.1.1/openssl-1.1.1w.tar.gz \
+            openssl.tar.gz
 
           tar xzf openssl.tar.gz
 
@@ -1059,7 +1060,9 @@ jobs:
           # libevent
           # ==========================================================
 
-          fetch https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz libevent.tar.gz
+          fetch \
+            https://github.com/libevent/libevent/releases/download/release-2.1.12-stable/libevent-2.1.12-stable.tar.gz \
+            libevent.tar.gz
 
           tar xzf libevent.tar.gz
 
@@ -1085,7 +1088,9 @@ jobs:
           # Berkeley DB 4.8.30
           # ==========================================================
 
-          fetch https://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz db-4.8.30.NC.tar.gz
+          fetch \
+            https://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz \
+            db-4.8.30.NC.tar.gz
 
           echo "12edc0df75bf9abd7f82f821795bcee50f42cb2e5f76a6a281b85732798364ef  db-4.8.30.NC.tar.gz" | sha256sum -c -
 
@@ -1094,22 +1099,36 @@ jobs:
           (
             cd db-4.8.30.NC
 
-            # Android libc++ also defines atomic_init(). Do NOT rename
-            # atomic_init globally in dbinc/atomic.h because that causes
-            # the replacement to leak into the Android C++ standard
-            # library headers and breaks libc++ itself.
+            # --------------------------------------------------------
+            # Berkeley DB 4.8 atomic compatibility
             #
-            # Keep the existing Berkeley DB-specific compare-exchange
-            # workaround, and patch only the Berkeley DB source files
-            # that need the renamed initialization function.
+            # Android libc++ provides its own atomic_init().
+            #
+            # DO NOT define:
+            #
+            #   -Datomic_init=atomic_init_db
+            #
+            # globally, because that leaks into libc++ headers.
+            #
+            # Instead, rename Berkeley DB's own atomic_init function
+            # and its Berkeley DB call sites only.
+            #
+            # This follows the established Berkeley DB 4.8 C++11
+            # compatibility patch used by Bitcoin-derived projects.
+            # --------------------------------------------------------
+
             sed -i \
-              's/atomic_compare_exchange/atomic_compare_exchange_db/g' \
+              's/__atomic_compare_exchange/__atomic_compare_exchange_db/g' \
               dbinc/atomic.h
 
             sed -i \
-              's/\batomic_init[[:space:]]*(/atomic_init_db(/g' \
+              's/atomic_init/atomic_init_db/g' \
+              dbinc/atomic.h \
               mp/mp_region.c \
-              mp/mp_mvcc.c
+              mp/mp_mvcc.c \
+              mp/mp_fget.c \
+              mutex/mut_method.c \
+              mutex/mut_tas.c
 
             # The Berkeley DB archive can contain read-only files in
             # dist/. Make the directory and its files writable before
@@ -1140,7 +1159,9 @@ jobs:
           # Boost 1.74
           # ==========================================================
 
-          fetch https://archives.boost.io/release/1.74.0/source/boost_1_74_0.tar.bz2 boost.tar.bz2
+          fetch \
+            https://archives.boost.io/release/1.74.0/source/boost_1_74_0.tar.bz2 \
+            boost.tar.bz2
 
           tar xjf boost.tar.bz2
 
@@ -1240,7 +1261,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: android-deps
-          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v6
+          key: android-deps-arm64-api24-ossl1.1.1w-evt2.1.12-bdb4.8.30-boost1.74-v7
 
       # ============================================================
       # Build MinersWorldCoin
