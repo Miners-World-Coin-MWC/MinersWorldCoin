@@ -51,8 +51,6 @@ jobs:
   #   ppc64le-linux
   #   s390x-linux
   #   loongarch64-linux
-  #
-  # These are intentionally separate from the normal CI matrix.
   # ==========================================================================
 
   linux-cross:
@@ -109,9 +107,6 @@ jobs:
 
           # ================================================================
           # LOONGARCH64
-          #
-          # Ubuntu 24.04 provides the LoongArch cross compiler as the
-          # versioned gcc-14/g++-14 packages in Universe.
           # ================================================================
 
           - name: loongarch64-linux
@@ -159,7 +154,6 @@ jobs:
 
           sudo apt-get update
 
-          # LoongArch cross packages live in Ubuntu Universe.
           sudo add-apt-repository -y universe || true
 
           sudo apt-get update
@@ -226,20 +220,18 @@ jobs:
           echo "Repairing repository executable permissions"
           echo "============================================================"
 
-          chmod +x autogen.sh 2>/dev/null || true
-          chmod +x configure 2>/dev/null || true
+          # autogen.sh exists in the source tree.
+          chmod +x autogen.sh
 
-          # The depends system directly executes these files.
-          chmod +x depends/config.guess 2>/dev/null || true
-          chmod +x depends/config.sub 2>/dev/null || true
+          # depends directly executes these helper scripts.
+          chmod +x depends/config.guess
+          chmod +x depends/config.sub
 
-          # Repair executable autotools/helper scripts throughout depends.
           find depends \
             -type f \
             \( \
               -name 'config.guess' \
               -o -name 'config.sub' \
-              -o -name 'configure' \
               -o -name '*.sh' \
               -o -name 'gen_id' \
             \) \
@@ -247,49 +239,75 @@ jobs:
             2>/dev/null || true
 
           echo ""
-          echo "Permissions before autogen.sh:"
+          echo "autogen.sh:"
           ls -la autogen.sh
-          ls -la configure
+
+          echo ""
+          echo "depends/config.guess:"
           ls -la depends/config.guess
+
+          echo ""
+          echo "depends/config.sub:"
           ls -la depends/config.sub
 
           test -x autogen.sh
-          test -x configure
           test -x depends/config.guess
           test -x depends/config.sub
 
           echo ""
-          echo "Generating autotools build system..."
+          echo "============================================================"
+          echo "Testing config.guess"
+          echo "============================================================"
+
+          BUILD_TRIPLE="$(./depends/config.guess)"
+          echo "BUILD_TRIPLE=${BUILD_TRIPLE}"
+
+          echo ""
+          echo "============================================================"
+          echo "Testing config.sub"
+          echo "============================================================"
+
+          HOST_TRIPLE="$(./depends/config.sub "${{ matrix.host }}")"
+          echo "HOST_TRIPLE=${HOST_TRIPLE}"
+
+          echo ""
+          echo "============================================================"
+          echo "Generating autotools build system"
+          echo "============================================================"
 
           ./autogen.sh
 
           echo ""
           echo "============================================================"
-          echo "Repairing generated executable permissions"
+          echo "Checking generated configure script"
           echo "============================================================"
 
-          # autogen.sh may regenerate autotools helper files.
-          chmod +x autogen.sh 2>/dev/null || true
-          chmod +x configure 2>/dev/null || true
-          chmod +x depends/config.guess 2>/dev/null || true
-          chmod +x depends/config.sub 2>/dev/null || true
+          test -f configure
+
+          chmod +x configure
+
+          ls -la configure
+
+          test -x configure
+
+          echo ""
+          echo "============================================================"
+          echo "Rechecking depends helper permissions"
+          echo "============================================================"
+
+          chmod +x depends/config.guess
+          chmod +x depends/config.sub
 
           find depends \
             -type f \
             \( \
               -name 'config.guess' \
               -o -name 'config.sub' \
-              -o -name 'configure' \
               -o -name '*.sh' \
               -o -name 'gen_id' \
             \) \
             -exec chmod +x {} \; \
             2>/dev/null || true
-
-          echo ""
-          echo "Final depends helper permissions:"
-          ls -la depends/config.guess
-          ls -la depends/config.sub
 
           test -x depends/config.guess
           test -x depends/config.sub
@@ -308,13 +326,17 @@ jobs:
           echo "Verifying depends helpers"
           echo "============================================================"
 
-          ls -la ./config.guess 2>/dev/null || true
-          ls -la ./config.sub 2>/dev/null || true
-          ls -la ./depends/config.guess
-          ls -la ./depends/config.sub
+          ls -la depends/config.guess
+          ls -la depends/config.sub
 
-          test -x ./depends/config.guess
-          test -x ./depends/config.sub
+          test -x depends/config.guess
+          test -x depends/config.sub
+
+          BUILD_TRIPLE="$(./depends/config.guess)"
+          HOST_TRIPLE="$(./depends/config.sub "${{ matrix.host }}")"
+
+          echo "BUILD_TRIPLE=${BUILD_TRIPLE}"
+          echo "HOST_TRIPLE=${HOST_TRIPLE}"
 
           export OPENSSL_TARGET="${{ matrix.openssl-target }}"
 
@@ -322,12 +344,26 @@ jobs:
           echo "OPENSSL_TARGET=${OPENSSL_TARGET}"
 
           echo ""
-          echo "Building dependencies..."
+          echo "============================================================"
+          echo "Building dependencies"
+          echo "============================================================"
 
           make $MAKEJOBS -C depends \
             HOST="${{ matrix.host }}" \
             OPENSSL_TARGET="${OPENSSL_TARGET}" \
             ${{ matrix.dep-opts }}
+
+          echo ""
+          echo "============================================================"
+          echo "Checking generated config.site"
+          echo "============================================================"
+
+          PREFIX="${PWD}/depends/${{ matrix.host }}"
+          CONFIG_SITE="${PREFIX}/share/config.site"
+
+          test -f "${CONFIG_SITE}"
+
+          ls -la "${CONFIG_SITE}"
 
 
       # ======================================================================
@@ -343,6 +379,11 @@ jobs:
           set -euxo pipefail
 
           PREFIX="${PWD}/depends/${{ matrix.host }}"
+          export CONFIG_SITE="${PREFIX}/share/config.site"
+
+          test -f "${CONFIG_SITE}"
+
+          echo "CONFIG_SITE=${CONFIG_SITE}"
 
           ./configure \
             --host="${{ matrix.host }}" \
@@ -434,8 +475,6 @@ jobs:
 
   # ==========================================================================
   # EXPERIMENTAL ARM64 MUSL
-  #
-  # Real Alpine ARM64 environment under QEMU.
   # ==========================================================================
 
   aarch64-linux-musl:
@@ -449,20 +488,11 @@ jobs:
 
     steps:
 
-      # ======================================================================
-      # Checkout
-      # ======================================================================
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
-
-
-      # ======================================================================
-      # Alpine ARM64 VM
-      # ======================================================================
 
       - name: Build ARM64 musl
         uses: vmactions/alpine-vm@v1
@@ -497,9 +527,6 @@ jobs:
               patch \
               make
 
-            chmod +x ./autogen.sh 2>/dev/null || true
-            chmod +x ./configure 2>/dev/null || true
-
           run: |
             set -eux
 
@@ -529,7 +556,6 @@ jobs:
             echo "Compiler target:"
             gcc -dumpmachine
 
-
             echo ""
             echo "============================================================"
             echo "Repository preparation"
@@ -540,51 +566,34 @@ jobs:
             git submodule sync --recursive
             git submodule update --init --recursive
 
-            chmod +x ./autogen.sh 2>/dev/null || true
-            chmod +x ./configure 2>/dev/null || true
+            chmod +x ./autogen.sh
 
-            test -f ./autogen.sh
-            test -f ./configure
-
-            test -x ./autogen.sh
-            test -x ./configure
-
-            echo ""
-            echo "autogen.sh:"
-            ls -la ./autogen.sh
-
-            echo ""
-            echo "configure:"
-            ls -la ./configure
-
-
-            echo ""
-            echo "============================================================"
-            echo "Generate build system"
-            echo "============================================================"
-
-            ./autogen.sh
-
-
-            echo ""
-            echo "============================================================"
-            echo "Repair depends executable permissions"
-            echo "============================================================"
-
-            chmod +x ./depends/config.guess 2>/dev/null || true
-            chmod +x ./depends/config.sub 2>/dev/null || true
+            chmod +x ./depends/config.guess
+            chmod +x ./depends/config.sub
 
             find ./depends \
               -type f \
               \( \
                 -name 'config.guess' \
                 -o -name 'config.sub' \
-                -o -name 'configure' \
                 -o -name '*.sh' \
                 -o -name 'gen_id' \
               \) \
               -exec chmod +x {} \; \
               2>/dev/null || true
+
+            test -f ./autogen.sh
+            test -x ./autogen.sh
+
+            test -f ./depends/config.guess
+            test -f ./depends/config.sub
+
+            test -x ./depends/config.guess
+            test -x ./depends/config.sub
+
+            echo ""
+            echo "autogen.sh:"
+            ls -la ./autogen.sh
 
             echo ""
             echo "depends/config.guess:"
@@ -594,9 +603,58 @@ jobs:
             echo "depends/config.sub:"
             ls -la ./depends/config.sub
 
+            echo ""
+            echo "============================================================"
+            echo "Test config.guess"
+            echo "============================================================"
+
+            BUILD_TRIPLE="$(./depends/config.guess)"
+            echo "BUILD_TRIPLE=${BUILD_TRIPLE}"
+
+            echo ""
+            echo "============================================================"
+            echo "Test config.sub"
+            echo "============================================================"
+
+            HOST_TRIPLE="$(./depends/config.sub aarch64-linux-musl)"
+            echo "HOST_TRIPLE=${HOST_TRIPLE}"
+
+            echo ""
+            echo "============================================================"
+            echo "Generate build system"
+            echo "============================================================"
+
+            ./autogen.sh
+
+            test -f ./configure
+            chmod +x ./configure
+            test -x ./configure
+
+            echo ""
+            echo "Generated configure:"
+            ls -la ./configure
+
+            echo ""
+            echo "============================================================"
+            echo "Repair depends executable permissions"
+            echo "============================================================"
+
+            chmod +x ./depends/config.guess
+            chmod +x ./depends/config.sub
+
+            find ./depends \
+              -type f \
+              \( \
+                -name 'config.guess' \
+                -o -name 'config.sub' \
+                -o -name '*.sh' \
+                -o -name 'gen_id' \
+              \) \
+              -exec chmod +x {} \; \
+              2>/dev/null || true
+
             test -x ./depends/config.guess
             test -x ./depends/config.sub
-
 
             echo ""
             echo "============================================================"
@@ -611,13 +669,24 @@ jobs:
               NO_NATPMP=1 \
               NO_OPENSSL_LEGACY=1
 
+            echo ""
+            echo "============================================================"
+            echo "Checking generated config.site"
+            echo "============================================================"
+
+            PREFIX="${PWD}/depends/aarch64-linux-musl"
+            CONFIG_SITE="${PREFIX}/share/config.site"
+
+            test -f "${CONFIG_SITE}"
+
+            ls -la "${CONFIG_SITE}"
 
             echo ""
             echo "============================================================"
             echo "ARM64 musl configure"
             echo "============================================================"
 
-            PREFIX="${PWD}/depends/aarch64-linux-musl"
+            export CONFIG_SITE="${CONFIG_SITE}"
 
             ./configure \
               --host=aarch64-linux-musl \
@@ -648,7 +717,6 @@ jobs:
                 false
               )
 
-
             echo ""
             echo "============================================================"
             echo "ARM64 musl build"
@@ -666,7 +734,6 @@ jobs:
                 false
               )
 
-
             echo ""
             echo "============================================================"
             echo "ARM64 musl binaries"
@@ -681,7 +748,6 @@ jobs:
               -print \
               -exec file {} \;
 
-
             echo ""
             echo "============================================================"
             echo "Binary architecture verification"
@@ -692,7 +758,6 @@ jobs:
               "$BIN/minersworldcoin-cli" \
               "$BIN/minersworldcoin-tx"
 
-
             echo ""
             echo "============================================================"
             echo "Required binaries"
@@ -702,16 +767,11 @@ jobs:
             test -f "$BIN/minersworldcoin-cli"
             test -f "$BIN/minersworldcoin-tx"
 
-
             echo ""
             echo "============================================================"
             echo "ARM64 musl build completed"
             echo "============================================================"
 
-
-      # ======================================================================
-      # Upload
-      # ======================================================================
 
       - name: Upload ARM64 musl artifacts
         if: always()
@@ -740,20 +800,11 @@ jobs:
 
     steps:
 
-      # ======================================================================
-      # Checkout
-      # ======================================================================
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
-
-
-      # ======================================================================
-      # Install toolchain
-      # ======================================================================
 
       - name: Install RISC-V build tools
         shell: bash
@@ -780,10 +831,6 @@ jobs:
             git
 
 
-      # ======================================================================
-      # Prepare
-      # ======================================================================
-
       - name: Prepare build system
         shell: bash
         run: |
@@ -794,18 +841,16 @@ jobs:
           git submodule sync --recursive
           git submodule update --init --recursive
 
-          chmod +x autogen.sh 2>/dev/null || true
-          chmod +x configure 2>/dev/null || true
+          chmod +x autogen.sh
 
-          chmod +x depends/config.guess 2>/dev/null || true
-          chmod +x depends/config.sub 2>/dev/null || true
+          chmod +x depends/config.guess
+          chmod +x depends/config.sub
 
           find depends \
             -type f \
             \( \
               -name 'config.guess' \
               -o -name 'config.sub' \
-              -o -name 'configure' \
               -o -name '*.sh' \
               -o -name 'gen_id' \
             \) \
@@ -813,21 +858,29 @@ jobs:
             2>/dev/null || true
 
           test -x autogen.sh
-          test -x configure
           test -x depends/config.guess
           test -x depends/config.sub
 
+          BUILD_TRIPLE="$(./depends/config.guess)"
+          HOST_TRIPLE="$(./depends/config.sub riscv32-linux-gnu)"
+
+          echo "BUILD_TRIPLE=${BUILD_TRIPLE}"
+          echo "HOST_TRIPLE=${HOST_TRIPLE}"
+
           ./autogen.sh
 
-          chmod +x depends/config.guess 2>/dev/null || true
-          chmod +x depends/config.sub 2>/dev/null || true
+          test -f configure
+          chmod +x configure
+          test -x configure
+
+          chmod +x depends/config.guess
+          chmod +x depends/config.sub
 
           find depends \
             -type f \
             \( \
               -name 'config.guess' \
               -o -name 'config.sub' \
-              -o -name 'configure' \
               -o -name '*.sh' \
               -o -name 'gen_id' \
             \) \
@@ -837,10 +890,6 @@ jobs:
           test -x depends/config.guess
           test -x depends/config.sub
 
-
-      # ======================================================================
-      # Probe
-      # ======================================================================
 
       - name: Probe RISC-V 32 toolchain
         shell: bash
@@ -866,10 +915,6 @@ jobs:
           file /tmp/riscv32-probe.o
 
 
-      # ======================================================================
-      # Dependencies
-      # ======================================================================
-
       - name: Attempt dependency build
         shell: bash
         run: |
@@ -885,10 +930,8 @@ jobs:
             NO_UPNP=1 \
             NO_NATPMP=1
 
+          test -f "${PWD}/depends/riscv32-linux-gnu/share/config.site"
 
-      # ======================================================================
-      # Configure
-      # ======================================================================
 
       - name: Configure RISC-V 32
         shell: bash
@@ -897,6 +940,10 @@ jobs:
 
           export CC="clang --target=riscv32-linux-gnu -march=rv32gc -mabi=ilp32d"
           export CXX="clang++ --target=riscv32-linux-gnu -march=rv32gc -mabi=ilp32d"
+
+          export CONFIG_SITE="${PWD}/depends/riscv32-linux-gnu/share/config.site"
+
+          test -f "${CONFIG_SITE}"
 
           ./configure \
             --host=riscv32-linux-gnu \
@@ -916,10 +963,6 @@ jobs:
             )
 
 
-      # ======================================================================
-      # Build
-      # ======================================================================
-
       - name: Build RISC-V 32
         shell: bash
         run: |
@@ -931,10 +974,6 @@ jobs:
               false
             )
 
-
-      # ======================================================================
-      # Upload
-      # ======================================================================
 
       - name: Upload RISC-V 32 artifacts
         if: always()
@@ -950,14 +989,6 @@ jobs:
 
   # ==========================================================================
   # EXPERIMENTAL ANDROID / TERMUX
-  #
-  # Native Android executables, NOT APKs.
-  #
-  # Targets:
-  #
-  #   ARMv7
-  #   x86
-  #   x86_64
   # ==========================================================================
 
   android:
@@ -974,10 +1005,6 @@ jobs:
 
         include:
 
-          # ================================================================
-          # ARMv7
-          # ================================================================
-
           - name: armv7-termux
             host: arm-linux-androideabi
             target: armv7a-linux-androideabi
@@ -985,20 +1012,12 @@ jobs:
             abi: armeabi-v7a
             experimental: true
 
-          # ================================================================
-          # x86
-          # ================================================================
-
           - name: x86-termux
             host: i686-linux-android
             target: i686-linux-android
             arch: i686
             abi: x86
             experimental: true
-
-          # ================================================================
-          # x86_64
-          # ================================================================
 
           - name: x86_64-termux
             host: x86_64-linux-android
@@ -1015,20 +1034,11 @@ jobs:
 
     steps:
 
-      # ======================================================================
-      # Checkout
-      # ======================================================================
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
-
-
-      # ======================================================================
-      # Java
-      # ======================================================================
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
@@ -1036,20 +1046,10 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-
-      # ======================================================================
-      # Android SDK
-      # ======================================================================
-
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
         with:
           packages: "platform-tools platforms;android-24"
-
-
-      # ======================================================================
-      # Android NDK
-      # ======================================================================
 
       - name: Install Android NDK
         shell: bash
@@ -1063,11 +1063,6 @@ jobs:
 
           echo "ANDROID_TOOLCHAIN_BIN=${ANDROID_SDK_ROOT}/ndk/${ANDROID_NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin" \
             >> "$GITHUB_ENV"
-
-
-      # ======================================================================
-      # Host tools
-      # ======================================================================
 
       - name: Install host build tools
         shell: bash
@@ -1090,11 +1085,6 @@ jobs:
             ca-certificates \
             file
 
-
-      # ======================================================================
-      # Prepare
-      # ======================================================================
-
       - name: Prepare build system
         shell: bash
         run: |
@@ -1105,18 +1095,16 @@ jobs:
           git submodule sync --recursive
           git submodule update --init --recursive
 
-          chmod +x autogen.sh 2>/dev/null || true
-          chmod +x configure 2>/dev/null || true
+          chmod +x autogen.sh
 
-          chmod +x depends/config.guess 2>/dev/null || true
-          chmod +x depends/config.sub 2>/dev/null || true
+          chmod +x depends/config.guess
+          chmod +x depends/config.sub
 
           find depends \
             -type f \
             \( \
               -name 'config.guess' \
               -o -name 'config.sub' \
-              -o -name 'configure' \
               -o -name '*.sh' \
               -o -name 'gen_id' \
             \) \
@@ -1124,21 +1112,29 @@ jobs:
             2>/dev/null || true
 
           test -x autogen.sh
-          test -x configure
           test -x depends/config.guess
           test -x depends/config.sub
 
+          BUILD_TRIPLE="$(./depends/config.guess)"
+          HOST_TRIPLE="$(./depends/config.sub "${{ matrix.host }}")"
+
+          echo "BUILD_TRIPLE=${BUILD_TRIPLE}"
+          echo "HOST_TRIPLE=${HOST_TRIPLE}"
+
           ./autogen.sh
 
-          chmod +x depends/config.guess 2>/dev/null || true
-          chmod +x depends/config.sub 2>/dev/null || true
+          test -f configure
+          chmod +x configure
+          test -x configure
+
+          chmod +x depends/config.guess
+          chmod +x depends/config.sub
 
           find depends \
             -type f \
             \( \
               -name 'config.guess' \
               -o -name 'config.sub' \
-              -o -name 'configure' \
               -o -name '*.sh' \
               -o -name 'gen_id' \
             \) \
@@ -1148,10 +1144,6 @@ jobs:
           test -x depends/config.guess
           test -x depends/config.sub
 
-
-      # ======================================================================
-      # Configure Android compiler
-      # ======================================================================
 
       - name: Configure Android compiler
         shell: bash
@@ -1205,10 +1197,6 @@ jobs:
           "$CXX" --version
 
 
-      # ======================================================================
-      # Android dependencies
-      # ======================================================================
-
       - name: Build Android dependencies
         shell: bash
         run: |
@@ -1228,10 +1216,8 @@ jobs:
             NO_UPNP=1 \
             NO_NATPMP=1
 
+          test -f "${PWD}/depends/${{ matrix.host }}/share/config.site"
 
-      # ======================================================================
-      # Configure
-      # ======================================================================
 
       - name: Configure MinersWorldCoin
         shell: bash
@@ -1239,6 +1225,10 @@ jobs:
           set -euxo pipefail
 
           PREFIX="${PWD}/depends/${{ matrix.host }}"
+
+          export CONFIG_SITE="${PREFIX}/share/config.site"
+
+          test -f "${CONFIG_SITE}"
 
           ./configure \
             --host="${{ matrix.host }}" \
@@ -1262,10 +1252,6 @@ jobs:
             )
 
 
-      # ======================================================================
-      # Build
-      # ======================================================================
-
       - name: Build Android binaries
         shell: bash
         run: |
@@ -1287,10 +1273,6 @@ jobs:
             2>/dev/null || true
 
 
-      # ======================================================================
-      # Inspect
-      # ======================================================================
-
       - name: Inspect Android binaries
         shell: bash
         run: |
@@ -1309,10 +1291,6 @@ jobs:
           test -f "$BIN/minersworldcoin-tx"
 
 
-      # ======================================================================
-      # Upload
-      # ======================================================================
-
       - name: Upload Android artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -1327,8 +1305,6 @@ jobs:
 
   # ==========================================================================
   # EXPERIMENTAL FREEBSD
-  #
-  # vmactions boots a real FreeBSD VM under the GitHub Linux runner.
   # ==========================================================================
 
   freebsd:
@@ -1397,20 +1373,21 @@ jobs:
               libevent \
               db18
 
-            chmod +x ./autogen.sh ./configure 2>/dev/null || true
-
           run: |
             set -eux
 
             git config --global --add safe.directory "$(pwd)"
 
+            git submodule sync --recursive
             git submodule update --init --recursive
 
-            chmod +x ./autogen.sh ./configure 2>/dev/null || true
+            chmod +x ./autogen.sh
 
             ./autogen.sh
 
-            chmod +x ./configure 2>/dev/null || true
+            test -f ./configure
+            chmod +x ./configure
+            test -x ./configure
 
             ./configure \
               --prefix="${PWD}/bsd-out" \
@@ -1452,8 +1429,6 @@ jobs:
 
   # ==========================================================================
   # EXPERIMENTAL OPENBSD
-  #
-  # Currently x86_64 only.
   # ==========================================================================
 
   openbsd:
@@ -1499,20 +1474,21 @@ jobs:
               boost \
               libevent
 
-            chmod +x ./autogen.sh ./configure 2>/dev/null || true
-
           run: |
             set -eux
 
             git config --global --add safe.directory "$(pwd)"
 
+            git submodule sync --recursive
             git submodule update --init --recursive
 
-            chmod +x ./autogen.sh ./configure 2>/dev/null || true
+            chmod +x ./autogen.sh
 
             ./autogen.sh
 
-            chmod +x ./configure 2>/dev/null || true
+            test -f ./configure
+            chmod +x ./configure
+            test -x ./configure
 
             ./configure \
               --prefix="${PWD}/bsd-out" \
@@ -1554,11 +1530,6 @@ jobs:
 
   # ==========================================================================
   # EXPERIMENTAL NETBSD
-  #
-  # Targets:
-  #
-  #   NetBSD x86_64
-  #   NetBSD ARM64
   # ==========================================================================
 
   netbsd:
@@ -1627,20 +1598,21 @@ jobs:
               openssl \
               || true
 
-            chmod +x ./autogen.sh ./configure 2>/dev/null || true
-
           run: |
             set -eux
 
             git config --global --add safe.directory "$(pwd)"
 
+            git submodule sync --recursive
             git submodule update --init --recursive
 
-            chmod +x ./autogen.sh ./configure 2>/dev/null || true
+            chmod +x ./autogen.sh
 
             ./autogen.sh
 
-            chmod +x ./configure 2>/dev/null || true
+            test -f ./configure
+            chmod +x ./configure
+            test -x ./configure
 
             ./configure \
               --prefix="${PWD}/bsd-out" \
@@ -1682,8 +1654,6 @@ jobs:
 
   # ==========================================================================
   # EXPERIMENTAL NATIVE ARM64 LINUX
-  #
-  # This is a genuine ARM64 GitHub-hosted runner.
   # ==========================================================================
 
   linux-arm64-native:
@@ -1697,20 +1667,11 @@ jobs:
 
     steps:
 
-      # ======================================================================
-      # Checkout
-      # ======================================================================
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
-
-
-      # ======================================================================
-      # Host dependencies
-      # ======================================================================
 
       - name: Install build dependencies
         shell: bash
@@ -1734,10 +1695,6 @@ jobs:
             file
 
 
-      # ======================================================================
-      # Build
-      # ======================================================================
-
       - name: Build native ARM64
         shell: bash
         run: |
@@ -1748,18 +1705,19 @@ jobs:
           git submodule sync --recursive
           git submodule update --init --recursive
 
-          chmod +x autogen.sh 2>/dev/null || true
-          chmod +x configure 2>/dev/null || true
+          echo "============================================================"
+          echo "Repairing executable permissions"
+          echo "============================================================"
 
-          chmod +x depends/config.guess 2>/dev/null || true
-          chmod +x depends/config.sub 2>/dev/null || true
+          chmod +x autogen.sh
+          chmod +x depends/config.guess
+          chmod +x depends/config.sub
 
           find depends \
             -type f \
             \( \
               -name 'config.guess' \
               -o -name 'config.sub' \
-              -o -name 'configure' \
               -o -name '*.sh' \
               -o -name 'gen_id' \
             \) \
@@ -1767,30 +1725,41 @@ jobs:
             2>/dev/null || true
 
           test -x autogen.sh
-          test -x configure
           test -x depends/config.guess
           test -x depends/config.sub
 
+          BUILD_TRIPLE="$(./depends/config.guess)"
+          HOST_TRIPLE="$(./depends/config.sub aarch64-linux-gnu)"
+
+          echo "BUILD_TRIPLE=${BUILD_TRIPLE}"
+          echo "HOST_TRIPLE=${HOST_TRIPLE}"
+
+          echo ""
+          echo "============================================================"
+          echo "Generating autotools build system"
+          echo "============================================================"
+
           ./autogen.sh
 
-          chmod +x depends/config.guess 2>/dev/null || true
-          chmod +x depends/config.sub 2>/dev/null || true
+          test -f configure
+          chmod +x configure
+          test -x configure
+
+          chmod +x depends/config.guess
+          chmod +x depends/config.sub
 
           find depends \
             -type f \
             \( \
               -name 'config.guess' \
               -o -name 'config.sub' \
-              -o -name 'configure' \
               -o -name '*.sh' \
               -o -name 'gen_id' \
             \) \
             -exec chmod +x {} \; \
             2>/dev/null || true
 
-          test -x depends/config.guess
-          test -x depends/config.sub
-
+          echo ""
           echo "============================================================"
           echo "ARM64 native dependency build"
           echo "============================================================"
@@ -1802,9 +1771,24 @@ jobs:
             NO_UPNP=1 \
             NO_NATPMP=1
 
+          PREFIX="${PWD}/depends/aarch64-linux-gnu"
+          CONFIG_SITE="${PREFIX}/share/config.site"
+
+          test -f "${CONFIG_SITE}"
+
+          export CONFIG_SITE="${CONFIG_SITE}"
+
+          echo ""
+          echo "CONFIG_SITE=${CONFIG_SITE}"
+
+          echo ""
+          echo "============================================================"
+          echo "ARM64 native configure"
+          echo "============================================================"
+
           ./configure \
             --host=aarch64-linux-gnu \
-            --prefix="${PWD}/depends/aarch64-linux-gnu" \
+            --prefix="${PREFIX}" \
             --disable-tests \
             --disable-bench \
             --without-gui \
@@ -1819,12 +1803,13 @@ jobs:
               false
             )
 
+          echo ""
+          echo "============================================================"
+          echo "ARM64 native build"
+          echo "============================================================"
+
           make $MAKEJOBS install
 
-
-      # ======================================================================
-      # Inspect
-      # ======================================================================
 
       - name: Inspect ARM64 binaries
         shell: bash
@@ -1840,10 +1825,6 @@ jobs:
           test -f depends/aarch64-linux-gnu/bin/minersworldcoin-cli
           test -f depends/aarch64-linux-gnu/bin/minersworldcoin-tx
 
-
-      # ======================================================================
-      # Upload
-      # ======================================================================
 
       - name: Upload ARM64 artifacts
         if: always()
