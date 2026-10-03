@@ -217,15 +217,82 @@ jobs:
         run: |
           set -euxo pipefail
 
-          chmod +x autogen.sh configure 2>/dev/null || true
-
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
+          git submodule sync --recursive
           git submodule update --init --recursive
 
-          chmod +x autogen.sh configure 2>/dev/null || true
+          echo "============================================================"
+          echo "Repairing repository executable permissions"
+          echo "============================================================"
+
+          chmod +x autogen.sh 2>/dev/null || true
+          chmod +x configure 2>/dev/null || true
+
+          # The depends system directly executes these files.
+          chmod +x depends/config.guess 2>/dev/null || true
+          chmod +x depends/config.sub 2>/dev/null || true
+
+          # Repair executable autotools/helper scripts throughout depends.
+          find depends \
+            -type f \
+            \( \
+              -name 'config.guess' \
+              -o -name 'config.sub' \
+              -o -name 'configure' \
+              -o -name '*.sh' \
+              -o -name 'gen_id' \
+            \) \
+            -exec chmod +x {} \; \
+            2>/dev/null || true
+
+          echo ""
+          echo "Permissions before autogen.sh:"
+          ls -la autogen.sh
+          ls -la configure
+          ls -la depends/config.guess
+          ls -la depends/config.sub
+
+          test -x autogen.sh
+          test -x configure
+          test -x depends/config.guess
+          test -x depends/config.sub
+
+          echo ""
+          echo "Generating autotools build system..."
 
           ./autogen.sh
+
+          echo ""
+          echo "============================================================"
+          echo "Repairing generated executable permissions"
+          echo "============================================================"
+
+          # autogen.sh may regenerate autotools helper files.
+          chmod +x autogen.sh 2>/dev/null || true
+          chmod +x configure 2>/dev/null || true
+          chmod +x depends/config.guess 2>/dev/null || true
+          chmod +x depends/config.sub 2>/dev/null || true
+
+          find depends \
+            -type f \
+            \( \
+              -name 'config.guess' \
+              -o -name 'config.sub' \
+              -o -name 'configure' \
+              -o -name '*.sh' \
+              -o -name 'gen_id' \
+            \) \
+            -exec chmod +x {} \; \
+            2>/dev/null || true
+
+          echo ""
+          echo "Final depends helper permissions:"
+          ls -la depends/config.guess
+          ls -la depends/config.sub
+
+          test -x depends/config.guess
+          test -x depends/config.sub
 
 
       # ======================================================================
@@ -237,9 +304,25 @@ jobs:
         run: |
           set -euxo pipefail
 
+          echo "============================================================"
+          echo "Verifying depends helpers"
+          echo "============================================================"
+
+          ls -la ./config.guess 2>/dev/null || true
+          ls -la ./config.sub 2>/dev/null || true
+          ls -la ./depends/config.guess
+          ls -la ./depends/config.sub
+
+          test -x ./depends/config.guess
+          test -x ./depends/config.sub
+
           export OPENSSL_TARGET="${{ matrix.openssl-target }}"
 
+          echo ""
           echo "OPENSSL_TARGET=${OPENSSL_TARGET}"
+
+          echo ""
+          echo "Building dependencies..."
 
           make $MAKEJOBS -C depends \
             HOST="${{ matrix.host }}" \
@@ -485,15 +568,8 @@ jobs:
 
             echo ""
             echo "============================================================"
-            echo "Fix generated build-system permissions"
+            echo "Repair depends executable permissions"
             echo "============================================================"
-
-            # vmactions/rsync can drop executable bits. autotools also
-            # generates additional helper scripts after autogen.sh.
-            #
-            # depends/config.guess and depends/config.sub are required
-            # directly by the depends build system, so make sure they are
-            # executable before invoking make.
 
             chmod +x ./depends/config.guess 2>/dev/null || true
             chmod +x ./depends/config.sub 2>/dev/null || true
@@ -505,6 +581,7 @@ jobs:
                 -o -name 'config.sub' \
                 -o -name 'configure' \
                 -o -name '*.sh' \
+                -o -name 'gen_id' \
               \) \
               -exec chmod +x {} \; \
               2>/dev/null || true
@@ -517,18 +594,8 @@ jobs:
             echo "depends/config.sub:"
             ls -la ./depends/config.sub
 
-
-            echo ""
-            echo "============================================================"
-            echo "Verify depends build files"
-            echo "============================================================"
-
             test -x ./depends/config.guess
             test -x ./depends/config.sub
-
-            echo ""
-            echo "depends directory:"
-            ls -la ./depends | head -n 80
 
 
             echo ""
@@ -722,15 +789,53 @@ jobs:
         run: |
           set -euxo pipefail
 
-          chmod +x autogen.sh configure 2>/dev/null || true
-
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
+          git submodule sync --recursive
           git submodule update --init --recursive
 
-          chmod +x autogen.sh configure 2>/dev/null || true
+          chmod +x autogen.sh 2>/dev/null || true
+          chmod +x configure 2>/dev/null || true
+
+          chmod +x depends/config.guess 2>/dev/null || true
+          chmod +x depends/config.sub 2>/dev/null || true
+
+          find depends \
+            -type f \
+            \( \
+              -name 'config.guess' \
+              -o -name 'config.sub' \
+              -o -name 'configure' \
+              -o -name '*.sh' \
+              -o -name 'gen_id' \
+            \) \
+            -exec chmod +x {} \; \
+            2>/dev/null || true
+
+          test -x autogen.sh
+          test -x configure
+          test -x depends/config.guess
+          test -x depends/config.sub
 
           ./autogen.sh
+
+          chmod +x depends/config.guess 2>/dev/null || true
+          chmod +x depends/config.sub 2>/dev/null || true
+
+          find depends \
+            -type f \
+            \( \
+              -name 'config.guess' \
+              -o -name 'config.sub' \
+              -o -name 'configure' \
+              -o -name '*.sh' \
+              -o -name 'gen_id' \
+            \) \
+            -exec chmod +x {} \; \
+            2>/dev/null || true
+
+          test -x depends/config.guess
+          test -x depends/config.sub
 
 
       # ======================================================================
@@ -769,6 +874,9 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
+
+          test -x ./depends/config.guess
+          test -x ./depends/config.sub
 
           make $MAKEJOBS -C depends \
             HOST=riscv32-linux-gnu \
@@ -992,15 +1100,53 @@ jobs:
         run: |
           set -euxo pipefail
 
-          chmod +x autogen.sh configure 2>/dev/null || true
-
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
+          git submodule sync --recursive
           git submodule update --init --recursive
 
-          chmod +x autogen.sh configure 2>/dev/null || true
+          chmod +x autogen.sh 2>/dev/null || true
+          chmod +x configure 2>/dev/null || true
+
+          chmod +x depends/config.guess 2>/dev/null || true
+          chmod +x depends/config.sub 2>/dev/null || true
+
+          find depends \
+            -type f \
+            \( \
+              -name 'config.guess' \
+              -o -name 'config.sub' \
+              -o -name 'configure' \
+              -o -name '*.sh' \
+              -o -name 'gen_id' \
+            \) \
+            -exec chmod +x {} \; \
+            2>/dev/null || true
+
+          test -x autogen.sh
+          test -x configure
+          test -x depends/config.guess
+          test -x depends/config.sub
 
           ./autogen.sh
+
+          chmod +x depends/config.guess 2>/dev/null || true
+          chmod +x depends/config.sub 2>/dev/null || true
+
+          find depends \
+            -type f \
+            \( \
+              -name 'config.guess' \
+              -o -name 'config.sub' \
+              -o -name 'configure' \
+              -o -name '*.sh' \
+              -o -name 'gen_id' \
+            \) \
+            -exec chmod +x {} \; \
+            2>/dev/null || true
+
+          test -x depends/config.guess
+          test -x depends/config.sub
 
 
       # ======================================================================
@@ -1067,6 +1213,9 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
+
+          test -x ./depends/config.guess
+          test -x ./depends/config.sub
 
           make $MAKEJOBS -C depends \
             HOST="${{ matrix.host }}" \
@@ -1594,15 +1743,57 @@ jobs:
         run: |
           set -euxo pipefail
 
-          chmod +x autogen.sh configure 2>/dev/null || true
-
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
+          git submodule sync --recursive
           git submodule update --init --recursive
 
-          chmod +x autogen.sh configure 2>/dev/null || true
+          chmod +x autogen.sh 2>/dev/null || true
+          chmod +x configure 2>/dev/null || true
+
+          chmod +x depends/config.guess 2>/dev/null || true
+          chmod +x depends/config.sub 2>/dev/null || true
+
+          find depends \
+            -type f \
+            \( \
+              -name 'config.guess' \
+              -o -name 'config.sub' \
+              -o -name 'configure' \
+              -o -name '*.sh' \
+              -o -name 'gen_id' \
+            \) \
+            -exec chmod +x {} \; \
+            2>/dev/null || true
+
+          test -x autogen.sh
+          test -x configure
+          test -x depends/config.guess
+          test -x depends/config.sub
 
           ./autogen.sh
+
+          chmod +x depends/config.guess 2>/dev/null || true
+          chmod +x depends/config.sub 2>/dev/null || true
+
+          find depends \
+            -type f \
+            \( \
+              -name 'config.guess' \
+              -o -name 'config.sub' \
+              -o -name 'configure' \
+              -o -name '*.sh' \
+              -o -name 'gen_id' \
+            \) \
+            -exec chmod +x {} \; \
+            2>/dev/null || true
+
+          test -x depends/config.guess
+          test -x depends/config.sub
+
+          echo "============================================================"
+          echo "ARM64 native dependency build"
+          echo "============================================================"
 
           make $MAKEJOBS -C depends \
             HOST=aarch64-linux-gnu \
