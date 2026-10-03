@@ -46,16 +46,13 @@ jobs:
   # ==========================================================================
   # EXPERIMENTAL LINUX CROSS BUILDS
   #
-  # These targets are intentionally separate from the normal CI matrix.
-  #
   # Targets:
   #
   #   ppc64le-linux
   #   s390x-linux
   #   loongarch64-linux
   #
-  # All are allowed to fail while we establish whether the complete
-  # MinersWorldCoin dependency stack supports these architectures.
+  # These are intentionally separate from the normal CI matrix.
   # ==========================================================================
 
   linux-cross:
@@ -85,6 +82,7 @@ jobs:
               qemu-user
             cc: powerpc64le-linux-gnu-gcc
             cxx: powerpc64le-linux-gnu-g++
+            openssl-target: linux-ppc64le
             experimental: true
             dep-opts: "NO_QT=1 NO_ZMQ=1 NO_UPNP=1 NO_NATPMP=1"
             config-opts: "--disable-tests --disable-bench --without-gui --disable-zmq"
@@ -103,6 +101,7 @@ jobs:
               qemu-user
             cc: s390x-linux-gnu-gcc
             cxx: s390x-linux-gnu-g++
+            openssl-target: linux64-s390x
             experimental: true
             dep-opts: "NO_QT=1 NO_ZMQ=1 NO_UPNP=1 NO_NATPMP=1"
             config-opts: "--disable-tests --disable-bench --without-gui --disable-zmq"
@@ -110,17 +109,21 @@ jobs:
 
           # ================================================================
           # LOONGARCH64
+          #
+          # Ubuntu 24.04 provides the LoongArch cross compiler as the
+          # versioned gcc-14/g++-14 packages in Universe.
           # ================================================================
 
           - name: loongarch64-linux
             host: loongarch64-linux-gnu
             packages: >
-              gcc-loongarch64-linux-gnu
-              g++-loongarch64-linux-gnu
+              gcc-14-loongarch64-linux-gnu
+              g++-14-loongarch64-linux-gnu
               qemu-user-static
               qemu-user
-            cc: loongarch64-linux-gnu-gcc
-            cxx: loongarch64-linux-gnu-g++
+            cc: loongarch64-linux-gnu-gcc-14
+            cxx: loongarch64-linux-gnu-g++-14
+            openssl-target: linux64-loongarch64
             experimental: true
             dep-opts: "NO_QT=1 NO_ZMQ=1 NO_UPNP=1 NO_NATPMP=1"
             config-opts: "--disable-tests --disable-bench --without-gui --disable-zmq"
@@ -153,6 +156,11 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
+
+          sudo apt-get update
+
+          # LoongArch cross packages live in Ubuntu Universe.
+          sudo add-apt-repository -y universe || true
 
           sudo apt-get update
 
@@ -195,6 +203,10 @@ jobs:
           echo "Target:"
           ${{ matrix.cc }} -dumpmachine || true
 
+          echo ""
+          echo "OpenSSL target:"
+          echo "${{ matrix.openssl-target }}"
+
 
       # ======================================================================
       # Prepare build system
@@ -211,6 +223,8 @@ jobs:
 
           git submodule update --init --recursive
 
+          chmod +x autogen.sh configure 2>/dev/null || true
+
           ./autogen.sh
 
 
@@ -222,6 +236,10 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
+
+          export OPENSSL_TARGET="${{ matrix.openssl-target }}"
+
+          echo "OPENSSL_TARGET=${OPENSSL_TARGET}"
 
           make $MAKEJOBS -C depends \
             HOST="${{ matrix.host }}" \
@@ -334,10 +352,7 @@ jobs:
   # ==========================================================================
   # EXPERIMENTAL ARM64 MUSL
   #
-  # This deliberately remains a separate job from x86_64-linux-musl in ci.yml.
-  #
-  # vmactions boots a real Alpine ARM64 environment under QEMU, meaning this
-  # is an actual aarch64-musl build rather than an x86_64 host cross-build.
+  # Real Alpine ARM64 environment under QEMU.
   # ==========================================================================
 
   aarch64-linux-musl:
@@ -388,22 +403,135 @@ jobs:
               autoconf \
               automake \
               libtool \
-              pkgconfig \
+              pkgconf \
               python3 \
+              py3-pip \
               curl \
               ca-certificates \
               file \
-              cmake
+              cmake \
+              perl \
+              patch \
+              make
+
+            chmod +x ./autogen.sh 2>/dev/null || true
+            chmod +x ./configure 2>/dev/null || true
 
           run: |
             set -eux
 
+            echo "============================================================"
+            echo "ARM64 musl environment"
+            echo "============================================================"
+
+            uname -a
+
+            echo ""
+            echo "Architecture:"
+            uname -m
+
+            echo ""
+            echo "Alpine:"
+            cat /etc/alpine-release
+
+            echo ""
+            echo "Compiler:"
+            gcc --version
+
+            echo ""
+            echo "C++ compiler:"
+            g++ --version
+
+            echo ""
+            echo "Compiler target:"
+            gcc -dumpmachine
+
+
+            echo ""
+            echo "============================================================"
+            echo "Repository preparation"
+            echo "============================================================"
+
             git config --global --add safe.directory "$(pwd)"
 
-            chmod +x autogen.sh || true
+            git submodule sync --recursive
+            git submodule update --init --recursive
+
+            chmod +x ./autogen.sh 2>/dev/null || true
+            chmod +x ./configure 2>/dev/null || true
+
+            test -f ./autogen.sh
+            test -f ./configure
+
+            test -x ./autogen.sh
+            test -x ./configure
+
+            echo ""
+            echo "autogen.sh:"
+            ls -la ./autogen.sh
+
+            echo ""
+            echo "configure:"
+            ls -la ./configure
+
+
+            echo ""
+            echo "============================================================"
+            echo "Generate build system"
+            echo "============================================================"
 
             ./autogen.sh
 
+
+            echo ""
+            echo "============================================================"
+            echo "Fix generated build-system permissions"
+            echo "============================================================"
+
+            # vmactions/rsync can drop executable bits. autotools also
+            # generates additional helper scripts after autogen.sh.
+            #
+            # depends/config.guess and depends/config.sub are required
+            # directly by the depends build system, so make sure they are
+            # executable before invoking make.
+
+            chmod +x ./depends/config.guess 2>/dev/null || true
+            chmod +x ./depends/config.sub 2>/dev/null || true
+
+            find ./depends \
+              -type f \
+              \( \
+                -name 'config.guess' \
+                -o -name 'config.sub' \
+                -o -name 'configure' \
+                -o -name '*.sh' \
+              \) \
+              -exec chmod +x {} \; \
+              2>/dev/null || true
+
+            echo ""
+            echo "depends/config.guess:"
+            ls -la ./depends/config.guess
+
+            echo ""
+            echo "depends/config.sub:"
+            ls -la ./depends/config.sub
+
+
+            echo ""
+            echo "============================================================"
+            echo "Verify depends build files"
+            echo "============================================================"
+
+            test -x ./depends/config.guess
+            test -x ./depends/config.sub
+
+            echo ""
+            echo "depends directory:"
+            ls -la ./depends | head -n 80
+
+
+            echo ""
             echo "============================================================"
             echo "ARM64 musl dependency build"
             echo "============================================================"
@@ -416,40 +544,102 @@ jobs:
               NO_NATPMP=1 \
               NO_OPENSSL_LEGACY=1
 
+
+            echo ""
             echo "============================================================"
             echo "ARM64 musl configure"
             echo "============================================================"
 
+            PREFIX="${PWD}/depends/aarch64-linux-musl"
+
             ./configure \
               --host=aarch64-linux-musl \
-              --prefix="${PWD}/depends/aarch64-linux-musl" \
+              --prefix="${PREFIX}" \
               --disable-tests \
               --disable-bench \
               --without-gui \
               --disable-zmq \
               --enable-reduce-exports \
-              CXXFLAGS="-std=c++17 -O2 -Wno-deprecated-declarations"
+              CFLAGS="-O2 -pipe" \
+              CXXFLAGS="-std=c++17 -O2 -pipe" \
+              LDFLAGS="-static-libstdc++" \
+              2>&1 | tee configure.console \
+              || (
+                echo ""
+                echo "============================================================"
+                echo "configure FAILED"
+                echo "============================================================"
 
+                tail -n 100 configure.console
+
+                echo ""
+                echo "Relevant config.log errors:"
+                grep -nE \
+                  'configure:[0-9]+: error:|^configure: error:' \
+                  config.log || true
+
+                false
+              )
+
+
+            echo ""
             echo "============================================================"
             echo "ARM64 musl build"
             echo "============================================================"
 
-            make -j3 install
+            make -j3 install \
+              || (
+                echo ""
+                echo "============================================================"
+                echo "Normal build failed - verbose build follows"
+                echo "============================================================"
 
+                make V=1 install
+
+                false
+              )
+
+
+            echo ""
             echo "============================================================"
             echo "ARM64 musl binaries"
             echo "============================================================"
 
-            find depends/aarch64-linux-musl/bin \
+            BIN="depends/aarch64-linux-musl/bin"
+
+            find "$BIN" \
               -maxdepth 1 \
               -type f \
               -name 'minersworldcoin*' \
               -print \
               -exec file {} \;
 
-            test -f depends/aarch64-linux-musl/bin/minersworldcoind
-            test -f depends/aarch64-linux-musl/bin/minersworldcoin-cli
-            test -f depends/aarch64-linux-musl/bin/minersworldcoin-tx
+
+            echo ""
+            echo "============================================================"
+            echo "Binary architecture verification"
+            echo "============================================================"
+
+            file \
+              "$BIN/minersworldcoind" \
+              "$BIN/minersworldcoin-cli" \
+              "$BIN/minersworldcoin-tx"
+
+
+            echo ""
+            echo "============================================================"
+            echo "Required binaries"
+            echo "============================================================"
+
+            test -f "$BIN/minersworldcoind"
+            test -f "$BIN/minersworldcoin-cli"
+            test -f "$BIN/minersworldcoin-tx"
+
+
+            echo ""
+            echo "============================================================"
+            echo "ARM64 musl build completed"
+            echo "============================================================"
 
 
       # ======================================================================
@@ -470,9 +660,6 @@ jobs:
 
   # ==========================================================================
   # EXPERIMENTAL RISC-V 32
-  #
-  # RISC-V 32 is considerably less mature than the existing riscv64 build.
-  # The dependency build is therefore deliberately allowed to fail.
   # ==========================================================================
 
   riscv32-linux:
@@ -535,9 +722,13 @@ jobs:
         run: |
           set -euxo pipefail
 
+          chmod +x autogen.sh configure 2>/dev/null || true
+
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
           git submodule update --init --recursive
+
+          chmod +x autogen.sh configure 2>/dev/null || true
 
           ./autogen.sh
 
@@ -652,16 +843,13 @@ jobs:
   # ==========================================================================
   # EXPERIMENTAL ANDROID / TERMUX
   #
-  # These are native Android executables, NOT APKs.
+  # Native Android executables, NOT APKs.
   #
   # Targets:
   #
   #   ARMv7
   #   x86
   #   x86_64
-  #
-  # ARM64 remains in the main CI workflow because that build has its own
-  # hand-maintained dependency stack.
   # ==========================================================================
 
   android:
@@ -804,9 +992,13 @@ jobs:
         run: |
           set -euxo pipefail
 
+          chmod +x autogen.sh configure 2>/dev/null || true
+
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
           git submodule update --init --recursive
+
+          chmod +x autogen.sh configure 2>/dev/null || true
 
           ./autogen.sh
 
@@ -987,14 +1179,7 @@ jobs:
   # ==========================================================================
   # EXPERIMENTAL FREEBSD
   #
-  # GitHub does not provide native FreeBSD runners.
-  #
-  # vmactions boots real FreeBSD VMs under the GitHub Linux runner.
-  #
-  # Targets:
-  #
-  #   FreeBSD x86_64
-  #   FreeBSD ARM64
+  # vmactions boots a real FreeBSD VM under the GitHub Linux runner.
   # ==========================================================================
 
   freebsd:
@@ -1063,12 +1248,20 @@ jobs:
               libevent \
               db18
 
+            chmod +x ./autogen.sh ./configure 2>/dev/null || true
+
           run: |
             set -eux
 
             git config --global --add safe.directory "$(pwd)"
 
+            git submodule update --init --recursive
+
+            chmod +x ./autogen.sh ./configure 2>/dev/null || true
+
             ./autogen.sh
+
+            chmod +x ./configure 2>/dev/null || true
 
             ./configure \
               --prefix="${PWD}/bsd-out" \
@@ -1157,12 +1350,20 @@ jobs:
               boost \
               libevent
 
+            chmod +x ./autogen.sh ./configure 2>/dev/null || true
+
           run: |
             set -eux
 
             git config --global --add safe.directory "$(pwd)"
 
+            git submodule update --init --recursive
+
+            chmod +x ./autogen.sh ./configure 2>/dev/null || true
+
             ./autogen.sh
+
+            chmod +x ./configure 2>/dev/null || true
 
             ./configure \
               --prefix="${PWD}/bsd-out" \
@@ -1277,12 +1478,20 @@ jobs:
               openssl \
               || true
 
+            chmod +x ./autogen.sh ./configure 2>/dev/null || true
+
           run: |
             set -eux
 
             git config --global --add safe.directory "$(pwd)"
 
+            git submodule update --init --recursive
+
+            chmod +x ./autogen.sh ./configure 2>/dev/null || true
+
             ./autogen.sh
+
+            chmod +x ./configure 2>/dev/null || true
 
             ./configure \
               --prefix="${PWD}/bsd-out" \
@@ -1325,15 +1534,7 @@ jobs:
   # ==========================================================================
   # EXPERIMENTAL NATIVE ARM64 LINUX
   #
-  # GitHub provides an actual ubuntu-24.04 ARM64 hosted runner.
-  #
-  # This is intentionally different from:
-  #
-  #   aarch64-linux
-  #
-  # in the main CI, which is a cross-build.
-  #
-  # This confirms that MinersWorldCoin can build natively on ARM64 hardware.
+  # This is a genuine ARM64 GitHub-hosted runner.
   # ==========================================================================
 
   linux-arm64-native:
@@ -1393,9 +1594,13 @@ jobs:
         run: |
           set -euxo pipefail
 
+          chmod +x autogen.sh configure 2>/dev/null || true
+
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
           git submodule update --init --recursive
+
+          chmod +x autogen.sh configure 2>/dev/null || true
 
           ./autogen.sh
 
