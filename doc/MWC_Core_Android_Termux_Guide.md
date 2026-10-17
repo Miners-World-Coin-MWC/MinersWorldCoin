@@ -260,32 +260,6 @@ Check the network connection, the node's output, the device's date/time, and the
 
 Check battery optimisation and background execution settings for Termux. Android device manufacturers may apply additional restrictions.
 
-## 13. Recording a tutorial video
-
-For a trustworthy tutorial, capture the real Termux screen rather than relying on AI-generated terminal text. AI video generators often produce incorrect commands and filenames.
-
-Suggested 30-second structure:
-
-1. **0–4 seconds:** MWC logo and title: “MWC Core on Android with Termux”.
-2. **4–12 seconds:** Show the official release download and extraction.
-3. **12–20 seconds:** Show the real daemon startup output.
-4. **20–26 seconds:** Show a successful blockchain or network status query, if available.
-5. **26–30 seconds:** Show the official GitHub release link and invite viewers to explore MWC.
-
-Before publishing, hide private information, wallet addresses that you do not want public, seed phrases, private keys, RPC credentials, and any other sensitive terminal output.
-
-### AI video prompt: cinematic intro
-
-> Create a vertical 9:16 cinematic introduction for Miners World Coin (MWC). Use a dark background with gold and teal lighting, a mountain-mining logo, and a friendly green alien miner mascot wearing a white helmet with cyan lights and blue overalls marked MWC. Show a modern Android phone with a generic terminal interface. Premium community-driven cryptocurrency aesthetic, smooth camera movement, clean composition, crisp detail. Leave clear space for the editor to add the exact title “MWC Core on Android with Termux”. Do not generate readable command-line instructions, fake balances, price claims, or guaranteed earnings.
-
-### AI video prompt: tutorial transitions
-
-> Create a short vertical technology-video transition for a real Android Termux tutorial. Show close-up shots of a phone, a dark terminal interface, and gold-and-teal network graphics. Include the MWC green alien miner mascot as a guide. Leave the terminal screen blank or generic so real screen recordings can be inserted during editing. Do not invent commands, transaction results, block heights, or wallet balances. Smooth, professional, accessible visual style.
-
-### AI video prompt: closing screen
-
-> Create a polished vertical closing screen for Miners World Coin (MWC), using the established gold, teal, and dark colour palette, mountain-mining logo, and friendly green alien miner mascot in MWC workwear. Leave a clean central area for the editor to overlay “Explore MWC Core for Android” and the official GitHub release URL. Community-focused, modern, trustworthy, no price predictions, no promises of profit, and no fake mining statistics.
-
 ## 14. Official links
 
 - **Download MWC Core Android ARM64 Termux ZIP (1.0.0.2):**  
