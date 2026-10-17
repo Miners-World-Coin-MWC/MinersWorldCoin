@@ -260,7 +260,7 @@ Check the network connection, the node's output, the device's date/time, and the
 
 Check battery optimisation and background execution settings for Termux. Android device manufacturers may apply additional restrictions.
 
-## 14. Official links
+## 13. Official links
 
 - **Download MWC Core Android ARM64 Termux ZIP (1.0.0.2):**  
   https://github.com/Miners-World-Coin-MWC/MinersWorldCoin/releases/download/1.0.0.2/minersworldcoin-android-arm64-termux.zip
